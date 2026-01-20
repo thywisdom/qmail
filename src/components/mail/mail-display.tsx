@@ -1,12 +1,9 @@
-import { addDays, addHours, format, nextSaturday } from "date-fns"
+import { format } from "date-fns"
 import {
     Archive,
     ArchiveX,
-    Clock,
-    Forward,
+    Calendar as CalendarIcon,
     MoreVertical,
-    Reply,
-    ReplyAll,
     Trash2,
 } from "lucide-react"
 
@@ -120,94 +117,27 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                         <TooltipContent>{mail?.status === "trash" ? "Delete permanently" : "Move to trash"}</TooltipContent>
                     </Tooltip>
                     <Separator orientation="vertical" className="mx-1 h-6" />
+                </div>
+                <div className="ml-auto flex items-center gap-2">
                     <Tooltip>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={!mail}>
-                                        <Clock className="h-4 w-4" />
-                                        <span className="sr-only">Snooze</span>
+                                        <CalendarIcon className="h-4 w-4" />
+                                        <span className="sr-only">Calendar</span>
                                     </Button>
                                 </TooltipTrigger>
                             </PopoverTrigger>
-                            <PopoverContent className="flex w-[535px] p-0">
-                                <div className="flex flex-col gap-2 border-r px-2 py-4">
-                                    <div className="px-4 text-sm font-medium">Snooze until</div>
-                                    <div className="grid min-w-[250px] gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start font-normal"
-                                        >
-                                            Later today{" "}
-                                            <span className="ml-auto text-muted-foreground">
-                                                {format(addHours(today, 4), "E, h:m b")}
-                                            </span>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start font-normal"
-                                        >
-                                            Tomorrow
-                                            <span className="ml-auto text-muted-foreground">
-                                                {format(addDays(today, 1), "E, h:m b")}
-                                            </span>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start font-normal"
-                                        >
-                                            This weekend
-                                            <span className="ml-auto text-muted-foreground">
-                                                {format(nextSaturday(today), "E, h:m b")}
-                                            </span>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start font-normal"
-                                        >
-                                            Next week
-                                            <span className="ml-auto text-muted-foreground">
-                                                {format(addDays(today, 7), "E, h:m b")}
-                                            </span>
-                                        </Button>
-                                    </div>
-                                </div>
+                            <PopoverContent className="p-0 w-auto">
                                 <div className="p-2">
                                     <Calendar />
                                 </div>
                             </PopoverContent>
                         </Popover>
-                        <TooltipContent>Snooze</TooltipContent>
+                        <TooltipContent>Calendar</TooltipContent>
                     </Tooltip>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail}>
-                                <Reply className="h-4 w-4" />
-                                <span className="sr-only">Reply</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Reply</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail}>
-                                <ReplyAll className="h-4 w-4" />
-                                <span className="sr-only">Reply all</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Reply all</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail}>
-                                <Forward className="h-4 w-4" />
-                                <span className="sr-only">Forward</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Forward</TooltipContent>
-                    </Tooltip>
+                    {/* Removed Reply/Forward buttons */}
                 </div>
                 <Separator orientation="vertical" className="mx-2 h-6" />
                 <DropdownMenu>
@@ -233,44 +163,50 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
             </div>
             <Separator />
             {mail ? (
-                <div className="flex flex-1 flex-col">
+                <div className="flex flex-1 flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto">
-                        {threadMails.map((threadMail, index) => (
-                            <div key={threadMail.id} className="flex flex-col">
-                                <div className="flex items-start p-4">
-                                    <div className="flex items-start gap-4 text-sm">
-                                        <Avatar>
-                                            <AvatarImage alt={threadMail.name} />
-                                            <AvatarFallback>
-                                                {threadMail.name
-                                                    .split(" ")
-                                                    .map((chunk) => chunk[0])
-                                                    .join("")}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="grid gap-1">
-                                            <div className="font-semibold">{threadMail.name}</div>
-                                            <div className="line-clamp-1 text-xs">{threadMail.subject}</div>
-                                            <div className="line-clamp-1 text-xs">
-                                                <span className="font-medium">Reply-To:</span> {threadMail.email}
+                        {threadMails.map((threadMail, index) => {
+                            // Correctly identify sender for display in thread
+                            const isMe = threadMail.message?.senderEmail === user?.email
+                            const senderName = isMe ? "Me" : (threadMail.name || threadMail.message?.senderEmail || "Unknown")
+
+                            return (
+                                <div key={threadMail.id} className="flex flex-col">
+                                    <div className="flex items-start p-4">
+                                        <div className="flex items-start gap-4 text-sm">
+                                            <Avatar>
+                                                <AvatarImage alt={senderName} />
+                                                <AvatarFallback>
+                                                    {senderName
+                                                        .split(" ")
+                                                        .map((chunk) => chunk[0])
+                                                        .join("")}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="grid gap-1">
+                                                <div className="font-semibold">{senderName}</div>
+                                                <div className="line-clamp-1 text-xs">{threadMail.subject}</div>
+                                                <div className="line-clamp-1 text-xs">
+                                                    <span className="font-medium">Reply-To:</span> {threadMail.message?.senderEmail || threadMail.email}
+                                                </div>
                                             </div>
                                         </div>
+                                        {threadMail.date && (
+                                            <div className="ml-auto text-xs text-muted-foreground">
+                                                {format(new Date(threadMail.date), "PPpp")}
+                                            </div>
+                                        )}
                                     </div>
-                                    {threadMail.date && (
-                                        <div className="ml-auto text-xs text-muted-foreground">
-                                            {format(new Date(threadMail.date), "PPpp")}
-                                        </div>
-                                    )}
+                                    <div className="whitespace-pre-wrap px-4 pb-4 text-sm">
+                                        {threadMail.text}
+                                    </div>
+                                    {index < threadMails.length - 1 && <Separator />}
                                 </div>
-                                <div className="whitespace-pre-wrap px-4 pb-4 text-sm">
-                                    {threadMail.text}
-                                </div>
-                                {index < threadMails.length - 1 && <Separator />}
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                     <Separator className="mt-auto" />
-                    <div className="p-4">
+                    <div className="p-4 bg-background">
                         <form onSubmit={handleReply}>
                             <div className="grid gap-4">
                                 <Textarea
