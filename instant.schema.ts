@@ -13,10 +13,6 @@ const _schema = i.schema({
       imageURL: i.string().optional(),
       type: i.string().optional(),
     }),
-    contacts: i.entity({
-      email: i.string(),
-      name: i.string(),
-    }),
     // Content of the mail (shared/immutable)
     mails: i.entity({
       subject: i.string(),
@@ -60,7 +56,6 @@ const _schema = i.schema({
       },
     },
   },
-  rooms: {},
 });
 
 // This helps TypeScript display nicer intellisense

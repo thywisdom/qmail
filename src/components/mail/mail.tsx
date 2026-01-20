@@ -3,7 +3,6 @@
 import * as React from "react"
 import {
     Archive,
-    File,
     Inbox,
     Send,
     Trash2,
@@ -12,7 +11,6 @@ import {
 import { cn } from "@/lib/utils"
 
 
-import { Input } from "@/components/ui/input"
 import {
     ResizableHandle,
     ResizablePanel,

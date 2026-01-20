@@ -2,12 +2,9 @@ import { ComponentProps } from "react"
 import { formatDistanceToNow } from "date-fns"
 
 import { cn } from "@/lib/utils"
-// import { Badge } from "@/registry/new-york/ui/badge" // Adapted
-// import { ScrollArea } from "@/registry/new-york/ui/scroll-area" // Adapted
-// import { Separator } from "@/registry/new-york/ui/separator" // Adapted
+// import { Badge } from "@/components/ui/badge"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-// import { Separator } from "@/components/ui/separator" // Not used in snippet loop but imported
 
 import { useMail, Mail } from "@/components/mail/use-mail"
 

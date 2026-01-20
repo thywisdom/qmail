@@ -6,8 +6,6 @@ import { useEffect, useState } from "react"
 import { type Mail } from "@/components/mail/use-mail"
 
 export default function MailPage() {
-    const defaultLayout = undefined
-    const defaultCollapsed = undefined
 
     const { isLoading, user, error } = db.useAuth()
 
@@ -41,8 +39,6 @@ export default function MailPage() {
         const contentRaw = box.content
         const message = Array.isArray(contentRaw) ? contentRaw[0] : contentRaw
 
-        // Console log for debugging (remove later)
-        if (!message) console.log("Missing content for box:", box)
 
         return {
             id: box.id,
@@ -88,8 +84,8 @@ export default function MailPage() {
             <MailComponent
                 accounts={accounts}
                 mails={mails}
-                defaultLayout={defaultLayout}
-                defaultCollapsed={defaultCollapsed}
+                defaultLayout={undefined}
+                defaultCollapsed={undefined}
                 navCollapsedSize={4}
             />
         </div>

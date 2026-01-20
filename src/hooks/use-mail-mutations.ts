@@ -3,9 +3,6 @@ import { db } from "@/lib/db"
 import { i, id } from "@instantdb/react"
 
 export function useMailMutations() {
-    // In InstantDB react SDK, 'db.transact' is typically available on the db instance returned by init.
-    // If using a specific hook, it might be 'useTransaction' but standard usage is often direct or via db object.
-    // Given the error 'Property useTransaction does not exist', we will use 'db.transact' directly.
     const transact = db.transact
 
     const markAsRead = (boxId: string, read: boolean) => {

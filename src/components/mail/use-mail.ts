@@ -24,8 +24,6 @@ export type Mail = {
     subject: string
     text: string
     date: string
-    trash?: boolean
-    archive?: boolean
 }
 
 export type MailFilter = "inbox" | "trash" | "archive" | "sent" | "drafts"

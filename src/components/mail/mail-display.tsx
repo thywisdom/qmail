@@ -54,7 +54,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
     const handleTrash = () => {
         if (!mail) return
-        if (mail.trash) {
+        if (mail.status === "trash") {
             deletePermanently(mail.id)
         } else {
             moveToTrash(mail.id)
@@ -99,11 +99,11 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" disabled={!mail} onClick={handleTrash}>
-                                {mail?.trash ? <Trash2 className="h-4 w-4 text-red-600" /> : <Trash2 className="h-4 w-4" />}
+                                {mail?.status === "trash" ? <Trash2 className="h-4 w-4 text-red-600" /> : <Trash2 className="h-4 w-4" />}
                                 <span className="sr-only">Move to trash</span>
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{mail?.trash ? "Delete permanently" : "Move to trash"}</TooltipContent>
+                        <TooltipContent>{mail?.status === "trash" ? "Delete permanently" : "Move to trash"}</TooltipContent>
                     </Tooltip>
                     <Separator orientation="vertical" className="mx-1 h-6" />
                     <Tooltip>
