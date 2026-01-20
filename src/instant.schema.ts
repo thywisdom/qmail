@@ -3,9 +3,6 @@
 import { i } from "@instantdb/react";
 
 const _schema = i.schema({
-  // We inferred 1 attribute!
-  // Take a look at this schema, and if everything looks good,
-  // run `push schema` again to enforce the types.
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed(),
@@ -20,20 +17,35 @@ const _schema = i.schema({
       email: i.string(),
       name: i.string(),
     }),
+    // Content of the mail (shared/immutable)
     mails: i.entity({
-      archive: i.boolean().optional(),
-      date: i.string(),
-      email: i.string(),
-      labels: i.json(),
-      name: i.string(),
-      read: i.boolean(),
       subject: i.string(),
-      text: i.string(),
-      trash: i.boolean().optional(),
-      ownerEmail: i.string().indexed(),
+      body: i.string(),
+      senderEmail: i.string(),
+      recipientEmail: i.string(), // Main recipient for reference
+      createdAt: i.string(),
+    }),
+    // User-specific state (folder, read status)
+    boxes: i.entity({
+      userEmail: i.string().indexed(), // Owner
+      status: i.string().indexed(), // "inbox", "sent", "trash", "archive", "draft"
+      read: i.boolean(),
+      labels: i.json(), // Extra tags
     }),
   },
   links: {
+    $boxesMails: {
+      forward: {
+        on: "boxes",
+        has: "one",
+        label: "message",
+      },
+      reverse: {
+        on: "mails",
+        has: "many",
+        label: "boxes",
+      }
+    },
     $usersLinkedPrimaryUser: {
       forward: {
         on: "$users",
@@ -45,18 +57,6 @@ const _schema = i.schema({
         on: "$users",
         has: "many",
         label: "linkedGuestUsers",
-      },
-    },
-    $usersMails: {
-      forward: {
-        on: "$users",
-        has: "many",
-        label: "mails",
-      },
-      reverse: {
-        on: "mails",
-        has: "one",
-        label: "user",
       },
     },
   },

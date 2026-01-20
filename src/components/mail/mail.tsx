@@ -58,17 +58,20 @@ export function MailComponent({
     const [mail, setMail] = useMail()
 
     // Filter mails based on current view/folder
+    // Mails are already filtered by owner in page.tsx data fetching
+
     const filteredMails = React.useMemo(() => {
         switch (mail.filter) {
             case "inbox":
-                return mails.filter(m => !m.trash && !m.archive)
+                return mails.filter(m => m.status === "inbox")
+            case "sent":
+                return mails.filter(m => m.status === "sent")
             case "trash":
-                return mails.filter(m => m.trash)
+                return mails.filter(m => m.status === "trash")
             case "archive":
-                return mails.filter(m => !m.trash && m.archive)
-            // For now, others result in empty or inbox
+                return mails.filter(m => m.status === "archive")
             default:
-                return mails.filter(m => !m.trash && !m.archive)
+                return mails.filter(m => m.status === "inbox")
         }
     }, [mails, mail.filter])
 
@@ -86,9 +89,9 @@ export function MailComponent({
     }, [filteredMails, mail.selected, setMail])
 
     // Calculate counts
-    const unreadCount = mails.filter(m => !m.read && !m.trash && !m.archive).length
-    const trashCount = mails.filter(m => m.trash).length
-    const archiveCount = mails.filter(m => m.archive && !m.trash).length
+    const unreadCount = mails.filter(m => !m.read && m.status === "inbox").length
+    const trashCount = mails.filter(m => m.status === "trash").length
+    const archiveCount = mails.filter(m => m.status === "archive").length
 
 
     return (

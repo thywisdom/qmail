@@ -8,89 +8,84 @@ export function useMailMutations() {
     // Given the error 'Property useTransaction does not exist', we will use 'db.transact' directly.
     const transact = db.transact
 
-    const markAsRead = (mailId: string, read: boolean) => {
+    const markAsRead = (boxId: string, read: boolean) => {
         transact(
-            db.tx.mails[mailId].update({ read })
+            db.tx.boxes[boxId].update({ read })
         )
     }
 
-    const moveToTrash = (mailId: string) => {
+    const moveToTrash = (boxId: string) => {
         transact(
-            db.tx.mails[mailId].update({ trash: true })
+            db.tx.boxes[boxId].update({ status: "trash" })
         )
     }
 
-    const restoreFromTrash = (mailId: string) => {
+    const restoreFromTrash = (boxId: string) => {
         transact(
-            db.tx.mails[mailId].update({ trash: false })
+            db.tx.boxes[boxId].update({ status: "inbox" })
         )
     }
 
-    const archiveMail = (mailId: string) => {
+    const archiveMail = (boxId: string) => {
         transact(
-            db.tx.mails[mailId].update({ archive: true })
+            db.tx.boxes[boxId].update({ status: "archive" })
         )
     }
 
-    const unarchiveMail = (mailId: string) => {
+    const unarchiveMail = (boxId: string) => {
         transact(
-            db.tx.mails[mailId].update({ archive: false })
+            db.tx.boxes[boxId].update({ status: "inbox" })
         )
     }
 
 
-    const deletePermanently = (mailId: string) => {
+    const deletePermanently = (boxId: string) => {
         transact(
-            db.tx.mails[mailId].delete()
+            db.tx.boxes[boxId].delete()
         )
     }
 
-    // Simplistic 'Send' that creates a mail. 
-    // In a real app this might trigger a server function or workflow.
-    // Simplistic 'Send' that creates a mail. -- UPDATED for Dual Copy
+    // Relational 'Send'
     const sendMail = (mail: {
         subject: string,
         text: string,
-        email: string, // This is the RECIPIENT
+        email: string, // Recipient
         name: string,
         to?: string,
-        userEmail: string // The SENDER's email (current user)
+        userEmail: string // Sender
     }) => {
-        const senderMailId = id()
-        const recipientMailId = id()
+        const mailContentId = id()
+        const senderBoxId = id()
+        const recipientBoxId = id()
 
         const recipientEmail = mail.to || mail.email
-
-        const commonFields = {
-            subject: mail.subject,
-            text: mail.text,
-            date: new Date().toISOString(),
-        }
+        const now = new Date().toISOString()
 
         transact([
-            // 1. Sender Copy (Sent Folder)
-            db.tx.mails[senderMailId].update({
-                ...commonFields,
-                name: "To: " + recipientEmail, // Display Name
-                email: recipientEmail, // Associate with recipient for display
-                ownerEmail: mail.userEmail, // Owned by SENDER
-                read: true,
-                labels: ["sent"],
-                archive: false,
-                trash: false
+            // 1. Create Shared Content
+            db.tx.mails[mailContentId].update({
+                subject: mail.subject,
+                body: mail.text,
+                senderEmail: mail.userEmail,
+                recipientEmail: recipientEmail,
+                createdAt: now,
             }),
 
-            // 2. Recipient Copy (Inbox)
-            db.tx.mails[recipientMailId].update({
-                ...commonFields,
-                name: mail.name, // Display Name (Sender's name)
-                email: mail.userEmail, // Associate with sender for display
-                ownerEmail: recipientEmail, // Owned by RECIPIENT
-                read: false, // Unread for recipient
-                labels: [], // No special labels (Input)
-                archive: false,
-                trash: false
-            })
+            // 2. Sender Box (Sent Folder)
+            db.tx.boxes[senderBoxId].update({
+                userEmail: mail.userEmail,
+                status: "sent",
+                read: true,
+                labels: [],
+            }).link({ message: mailContentId }), // Link to content
+
+            // 3. Recipient Box (Inbox)
+            db.tx.boxes[recipientBoxId].update({
+                userEmail: recipientEmail,
+                status: "inbox",
+                read: false,
+                labels: [],
+            }).link({ message: mailContentId }), // Link to content
         ])
     }
 

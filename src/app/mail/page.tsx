@@ -10,7 +10,16 @@ export default function MailPage() {
     const defaultCollapsed = undefined
 
     const { isLoading, user, error } = db.useAuth()
-    const { data } = db.useQuery({ mails: {} })
+
+    // Fetch user's boxes and join the message content
+    const { data } = db.useQuery({
+        boxes: {
+            $: {
+                where: { userEmail: user?.email || "" }
+            },
+            message: {}
+        }
+    })
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>
@@ -26,7 +35,32 @@ export default function MailPage() {
         return null
     }
 
-    const mails: Mail[] = data?.mails as Mail[] || []
+    // Map Relational Data to Flat Mail Object for UI
+    const mails: Mail[] = (data?.boxes || []).map((box: any) => {
+        const message = box.message?.[0]
+        return {
+            id: box.id,
+            userEmail: box.userEmail,
+            status: box.status,
+            read: box.read,
+            labels: box.labels,
+            trash: box.status === "trash",
+            archive: box.status === "archive",
+
+            // Flatten Content
+            subject: message?.subject || "(No Subject)",
+            text: message?.body || "", // Map 'body' to 'text' for UI
+            date: message?.createdAt || new Date().toISOString(),
+
+            // Name mapping: 
+            // If 'sent', name is Recipient. 
+            // If 'inbox', name is Sender.
+            name: box.status === "sent" ? (message?.recipientEmail || "Recipient") : (message?.senderEmail || "Sender"),
+            email: box.status === "sent" ? (message?.recipientEmail || "") : (message?.senderEmail || ""),
+
+            message: message // Keep raw if needed
+        }
+    })
 
     // Construct account data from user info
     const accounts = user ? [
