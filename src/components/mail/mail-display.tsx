@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/tooltip"
 
 import { Mail } from "@/components/mail/use-mail"
+import { useMailMutations } from "@/hooks/use-mail-mutations"
+import React from "react"
 
 interface MailDisplayProps {
     mail: Mail | null
@@ -46,6 +48,31 @@ interface MailDisplayProps {
 
 export function MailDisplay({ mail }: MailDisplayProps) {
     const today = new Date()
+    const { moveToTrash, archiveMail, sendMail, markAsRead } = useMailMutations()
+
+    const handleTrash = () => {
+        if (mail) moveToTrash(mail.id)
+    }
+
+    const handleArchive = () => {
+        if (mail) archiveMail(mail.id)
+    }
+
+    // Quick "Reply" implementation: just sends a new mail (to self/inbox for demo)
+    const handleReply = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!mail) return
+
+        // In a real app, this would send to the sender. 
+        // Here we just add to our own inbox to simulate activity.
+        sendMail({
+            subject: `Re: ${mail.subject}`,
+            text: "This is a reply...",
+            email: "me@example.com",
+            name: "Me"
+        })
+    }
+
 
     return (
         <div className="flex h-full flex-col">
@@ -53,7 +80,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 <div className="flex items-center gap-2">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail}>
+                            <Button variant="ghost" size="icon" disabled={!mail} onClick={handleArchive}>
                                 <Archive className="h-4 w-4" />
                                 <span className="sr-only">Archive</span>
                             </Button>
@@ -62,7 +89,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail}>
+                            <Button variant="ghost" size="icon" disabled={!mail} onClick={handleTrash}>
                                 <ArchiveX className="h-4 w-4" />
                                 <span className="sr-only">Move to junk</span>
                             </Button>
@@ -71,7 +98,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail}>
+                            <Button variant="ghost" size="icon" disabled={!mail} onClick={handleTrash}>
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Move to trash</span>
                             </Button>
@@ -177,7 +204,9 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Mark as unread</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => mail && markAsRead(mail.id, !mail.read)}>
+                            {mail?.read ? "Mark as unread" : "Mark as read"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Star thread</DropdownMenuItem>
                         <DropdownMenuItem>Add label</DropdownMenuItem>
                         <DropdownMenuItem>Mute thread</DropdownMenuItem>
@@ -218,7 +247,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                     </div>
                     <Separator className="mt-auto" />
                     <div className="p-4">
-                        <form>
+                        <form onSubmit={handleReply}>
                             <div className="grid gap-4">
                                 <Textarea
                                     className="p-4"
@@ -233,7 +262,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                                         thread
                                     </Label>
                                     <Button
-                                        onClick={(e) => e.preventDefault()}
+                                        type="submit"
                                         size="sm"
                                         className="ml-auto"
                                     >

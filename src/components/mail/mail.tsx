@@ -33,6 +33,7 @@ import { MailDisplay } from "@/components/mail/mail-display"
 import { MailList } from "@/components/mail/mail-list"
 import { Nav } from "@/components/mail/nav"
 import { useMail, Mail } from "@/components/mail/use-mail"
+import { MailCompose } from "@/components/mail/mail-compose"
 
 interface MailProps {
     accounts: {
@@ -56,12 +57,38 @@ export function MailComponent({
     const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
     const [mail, setMail] = useMail()
 
-    React.useEffect(() => {
-        // Basic selection logic if nothing selected
-        if (!mail.selected && mails.length > 0) {
-            setMail({ ...mail, selected: mails[0].id })
+    // Filter mails based on current view/folder
+    const filteredMails = React.useMemo(() => {
+        switch (mail.filter) {
+            case "inbox":
+                return mails.filter(m => !m.trash && !m.archive)
+            case "trash":
+                return mails.filter(m => m.trash)
+            case "archive":
+                return mails.filter(m => !m.trash && m.archive)
+            // For now, others result in empty or inbox
+            default:
+                return mails.filter(m => !m.trash && !m.archive)
         }
-    }, [mails, mail, setMail])
+    }, [mails, mail.filter])
+
+
+    React.useEffect(() => {
+        // Basic selection logic: Select first mail if none selected, OR if the currently selected mail is NOT in the filtered list (e.g. moved to trash)
+        const isSelectedInList = filteredMails.some(m => m.id === mail.selected)
+        if ((!mail.selected || !isSelectedInList) && filteredMails.length > 0) {
+            // setMail({ ...mail, selected: filteredMails[0].id }) // Auto-select first? Maybe slightly annoying if it jumps. 
+            // Better: Deselect if not found, let user select.
+            if (!isSelectedInList && mail.selected) {
+                setMail(prev => ({ ...prev, selected: null }))
+            }
+        }
+    }, [filteredMails, mail.selected, setMail])
+
+    // Calculate counts
+    const unreadCount = mails.filter(m => !m.read && !m.trash && !m.archive).length
+    const trashCount = mails.filter(m => m.trash).length
+    const archiveCount = mails.filter(m => m.archive && !m.trash).length
 
 
     return (
@@ -107,44 +134,49 @@ export function MailComponent({
                         <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} />
                     </div>
                     <Separator />
+                    <div className="p-2">
+                        <MailCompose className={isCollapsed ? "justify-center px-0" : ""} />
+                    </div>
+                    <Separator />
                     <Nav
                         isCollapsed={isCollapsed}
                         links={[
                             {
                                 title: "Inbox",
-                                label: "128",
+                                label: unreadCount > 0 ? unreadCount.toString() : "",
                                 icon: Inbox,
-                                variant: "default",
+                                variant: mail.filter === "inbox" ? "default" : "ghost",
+                                onClick: () => setMail(prev => ({ ...prev, filter: "inbox" }))
                             },
-                            {
-                                title: "Drafts",
-                                label: "9",
-                                icon: File,
-                                variant: "ghost",
-                            },
+                            // Drafts removed.
+                            // Sent functionality implemented via labels.
                             {
                                 title: "Sent",
                                 label: "",
                                 icon: Send,
-                                variant: "ghost",
+                                variant: mail.filter === "sent" ? "default" : "ghost",
+                                onClick: () => setMail(prev => ({ ...prev, filter: "sent" }))
                             },
                             {
                                 title: "Junk",
-                                label: "23",
+                                label: "",
                                 icon: ArchiveX,
-                                variant: "ghost",
+                                variant: mail.filter === "junk" ? "default" : "ghost",
+                                onClick: () => setMail(prev => ({ ...prev, filter: "junk" }))
                             },
                             {
                                 title: "Trash",
-                                label: "",
+                                label: trashCount > 0 ? trashCount.toString() : "",
                                 icon: Trash2,
-                                variant: "ghost",
+                                variant: mail.filter === "trash" ? "default" : "ghost",
+                                onClick: () => setMail(prev => ({ ...prev, filter: "trash" }))
                             },
                             {
                                 title: "Archive",
-                                label: "",
+                                label: archiveCount > 0 ? archiveCount.toString() : "",
                                 icon: Archive,
-                                variant: "ghost",
+                                variant: mail.filter === "archive" ? "default" : "ghost",
+                                onClick: () => setMail(prev => ({ ...prev, filter: "archive" }))
                             },
                         ]}
                     />
@@ -155,7 +187,7 @@ export function MailComponent({
                 <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
                     <Tabs defaultValue="all">
                         <div className="flex items-center px-4 py-2">
-                            <h1 className="text-xl font-bold">Inbox</h1>
+                            <h1 className="text-xl font-bold capitalize">{mail.filter}</h1>
                             <TabsList className="ml-auto">
                                 <TabsTrigger
                                     value="all"
@@ -174,10 +206,10 @@ export function MailComponent({
                         <Separator />
 
                         <TabsContent value="all" className="m-0">
-                            <MailList items={mails} />
+                            <MailList items={filteredMails} />
                         </TabsContent>
                         <TabsContent value="unread" className="m-0">
-                            <MailList items={mails.filter((item) => !item.read)} />
+                            <MailList items={filteredMails.filter((item) => !item.read)} />
                         </TabsContent>
                     </Tabs>
                 </ResizablePanel>

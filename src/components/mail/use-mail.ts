@@ -14,12 +14,16 @@ export type Mail = {
     archive?: boolean
 }
 
+export type MailFilter = "inbox" | "trash" | "archive" | "sent" | "junk" | "drafts"
+
 type Config = {
     selected: Mail["id"] | null
+    filter: MailFilter
 }
 
 const configAtom = atom<Config>({
     selected: null,
+    filter: "inbox",
 })
 
 export function useMail() {
