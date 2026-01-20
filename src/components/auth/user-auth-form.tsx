@@ -20,13 +20,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
     async function onSubmit(event: React.SyntheticEvent) {
         event.preventDefault()
+        if (isLoading) return
+
         setIsLoading(true)
         setError("")
 
         const target = event.target as typeof event.target & {
             email: { value: string }
         }
-        const email = target.email.value.trim()
+        const email = target.email.value.trim().toLowerCase()
 
         if (!email) {
             setError("Email is required")
@@ -47,6 +49,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
     async function onVerify(event: React.SyntheticEvent) {
         event.preventDefault()
+        if (isLoading) return
+
         setIsLoading(true)
         setError("")
 
@@ -62,10 +66,17 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         }
 
         try {
-            await db.auth.signInWithMagicCode({ email: sentEmail, code })
+            console.log("Verifying code...")
+            const result = await db.auth.signInWithMagicCode({ email: sentEmail, code })
+            console.log("Verification successful:", result)
+
+            // Set session cookie for middleware
+            document.cookie = `__session=true; path=/; max-age=2592000; SameSite=Lax`
+
+            console.log("Navigating to /mail...")
             router.push("/mail")
         } catch (error: any) {
-            console.error(error)
+            console.error("Verification failed:", error)
             setError(error.body?.message || error.message || "Failed to verify code. Please check your code.")
         } finally {
             setIsLoading(false)
@@ -82,6 +93,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                                 Code
                             </Label>
                             <Input
+                                key="code-input"
                                 id="code"
                                 name="code"
                                 placeholder="123456"
@@ -128,6 +140,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                             Email
                         </Label>
                         <Input
+                            key="email-input"
                             id="email"
                             name="email"
                             placeholder="name@example.com"

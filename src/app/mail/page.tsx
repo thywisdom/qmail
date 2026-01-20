@@ -31,11 +31,19 @@ export default function MailPage() {
     const { isLoading, user, error } = db.useAuth()
     const { data } = db.useQuery({ mails: {} })
 
+    console.log("MailPage: auth state", { isLoading, user, error })
+
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>
     }
 
     if (!user) {
+        console.log("MailPage: No user, redirecting to /login")
+        // Clear session cookie to prevent infinite loops with middleware
+        if (typeof document !== "undefined") {
+            document.cookie = "__session=; path=/; max-age=0;"
+        }
+
         // Redirect or show login (Middleware is better but for now)
         if (typeof window !== "undefined") {
             window.location.href = "/login"
