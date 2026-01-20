@@ -11,7 +11,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+
 import { Textarea } from "@/components/ui/textarea"
 import { PenSquare } from "lucide-react"
 import { useMailMutations } from "@/hooks/use-mail-mutations"
@@ -76,52 +76,51 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
                     {!isCollapsed && "Compose"}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
+            <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                    <DialogHeader className="px-6 pt-6 pb-4 border-b">
                         <DialogTitle>New Message</DialogTitle>
                         <DialogDescription>
                             Send a new message to your contacts.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="to" className="text-right">
-                                To
-                            </Label>
+                    <div className="flex flex-col p-6 gap-2">
+                        <div className="flex items-center gap-2 border-b pb-2">
+                            <span className="text-sm font-medium text-muted-foreground w-[60px]">To</span>
                             <Input
                                 id="to"
                                 name="to"
                                 placeholder="recipient@example.com"
-                                className="col-span-3"
+                                className="border-0 focus-visible:ring-0 shadow-none px-0 h-9"
                                 required
+                                autoFocus
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="subject" className="text-right">
-                                Subject
-                            </Label>
+                        <div className="flex items-center gap-2 border-b pb-2">
+                            <span className="text-sm font-medium text-muted-foreground w-[60px]">Subject</span>
                             <Input
                                 id="subject"
                                 name="subject"
                                 placeholder="Subject"
-                                className="col-span-3"
+                                className="border-0 focus-visible:ring-0 shadow-none px-0 h-9 text-base font-medium"
                                 required
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="message">Message</Label>
+                        <div className="flex-1 pt-2">
                             <Textarea
                                 id="message"
                                 name="message"
-                                className="min-h-[200px]"
+                                className="min-h-[300px] border-0 focus-visible:ring-0 resize-none p-0 shadow-none text-base"
                                 placeholder="Type your message here..."
                                 required
                             />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button type="submit" disabled={loading}>
+                    <DialogFooter className="px-6 pb-6 sm:justify-between items-center">
+                        <div className="text-xs text-muted-foreground">
+                            Draft saved automatically
+                        </div>
+                        <Button type="submit" disabled={loading} size="default">
                             {loading ? "Sending..." : "Send Message"}
                         </Button>
                     </DialogFooter>

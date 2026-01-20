@@ -9,11 +9,21 @@ import { cn } from "@/lib/utils"
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
-    DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
-import { LogOut, LayoutDashboard } from "lucide-react"
+import {
+    LogOut,
+    LayoutDashboard,
+    ChevronsUpDown,
+    CreditCard,
+    Bell,
+    Sparkles,
+    BadgeCheck
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -31,23 +41,12 @@ export function Account({
     accounts,
 }: AccountProps) {
     const router = useRouter()
-
-    // We'll use the first account as the current logged-in user for display purposes 
-    // since the original switcher logic implies selection from the list.
-    // However, the request says "Account picture on left, Email id on right". 
-    // And "on click it must list two option ( Dashboard , Logout )".
-    // This suggests it's less of a "Switcher" and more of a "User Profile" menu.
-    // The original switcher allowed selecting generic accounts. 
-    // I will retain the prop `accounts` to find the current user info if needed, 
-    // or just use the first one as "current". 
-    // The db.useAuth() hook probably gives the real user.
-
     const { user } = db.useAuth()
 
-    // Fallback if no auth user, use first from props or generic
     const displayEmail = user?.email || accounts[0]?.email || "user@example.com"
     const displayLabel = accounts.find(a => a.email === displayEmail)?.label || "User"
-    // Use the icon from props if available for this email, otherwise default is used in logical display
+    // Extract initials for avatar fallback
+    const initials = displayLabel.substring(0, 2).toUpperCase()
 
     const handleLogout = async () => {
         try {
@@ -59,40 +58,82 @@ export function Account({
     }
 
     const handleDashboard = () => {
-        // Placeholder for dashboard navigation - maybe just log or do nothing if no route exists yet
-        console.log("Navigate to dashboard")
+        router.push("/dashboard")
     }
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn("flex w-full items-center gap-2 pl-0 pr-0 hover:bg-transparent", isCollapsed ? "justify-center" : "justify-start px-2")}>
-                    {/* Account picture (Avatar) - always visible */}
-                    <Avatar className="h-8 w-8">
-                        {/* Assuming no specific image URL in accounts prop, using fallback */}
-                        <AvatarImage src="" />
-                        <AvatarFallback>
-                            {displayEmail.charAt(0).toUpperCase()}
-                        </AvatarFallback>
+                <Button
+                    variant="ghost"
+                    size="lg"
+                    className={cn(
+                        "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
+                        "w-full justify-start pl-0 pr-0",
+                        isCollapsed ? "justify-center px-0" : "px-2"
+                    )}
+                >
+                    <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage src="" /> {/* Placeholder for avatar URL if available */}
+                        <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                     </Avatar>
 
-                    {/* Email - hidden if collapsed */}
                     {!isCollapsed && (
-                        <div className="flex flex-col items-start text-xs overflow-hidden">
-                            <span className="font-semibold truncate w-full text-left">{displayEmail}</span>
-                        </div>
+                        <>
+                            <div className="grid flex-1 text-left text-sm leading-tight ml-2">
+                                <span className="truncate font-semibold">{displayLabel}</span>
+                                <span className="text-muted-foreground truncate text-xs">
+                                    {displayEmail}
+                                </span>
+                            </div>
+                            <ChevronsUpDown className="ml-auto size-4" />
+                        </>
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[200px]">
-                <DropdownMenuItem onClick={handleDashboard}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                </DropdownMenuItem>
+            <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                side={isCollapsed ? "right" : "top"} // Adjust side based on collapse state preference, or keep simple
+                align="end"
+                sideOffset={4}
+            >
+                <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                        <Avatar className="h-8 w-8 rounded-lg">
+                            <AvatarImage src="" />
+                            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                        </Avatar>
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                            <span className="truncate font-semibold">{displayLabel}</span>
+                            <span className="text-muted-foreground truncate text-xs">
+                                {displayEmail}
+                            </span>
+                        </div>
+                    </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                <DropdownMenuGroup>
+                    <DropdownMenuItem>
+                        <BadgeCheck className="mr-2 h-4 w-4" />
+                        Account
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDashboard}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Billing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <Bell className="mr-2 h-4 w-4" />
+                        Notifications
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
+                    Log out
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
