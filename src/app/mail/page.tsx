@@ -60,7 +60,8 @@ export default function MailPage() {
             name: box.status === "sent" ? (message?.recipientEmail || "Recipient") : (message?.senderEmail || "Sender"),
             email: box.status === "sent" ? (message?.recipientEmail || "") : (message?.senderEmail || ""),
 
-            message: message // Keep raw if needed
+            message: message, // Keep raw if needed
+            threadId: message?.threadId // Map threadId
         }
     })
 

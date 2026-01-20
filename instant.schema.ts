@@ -20,6 +20,7 @@ const _schema = i.schema({
       senderEmail: i.string(),
       recipientEmail: i.string(), // Main recipient for reference
       createdAt: i.string(),
+      threadId: i.string().indexed(), // Group messages by thread
     }),
     // User-specific state (folder, read status)
     boxes: i.entity({

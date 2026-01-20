@@ -45,9 +45,10 @@ import React from "react"
 
 interface MailDisplayProps {
     mail: Mail | null
+    mails: Mail[] // Need all mails to find the thread
 }
 
-export function MailDisplay({ mail }: MailDisplayProps) {
+export function MailDisplay({ mail, mails }: MailDisplayProps) {
     const today = new Date()
     const { moveToTrash, archiveMail, sendMail, markAsRead, deletePermanently } = useMailMutations()
     const { user } = db.useAuth()
@@ -65,6 +66,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
         if (mail) archiveMail(mail.id)
     }
 
+    // Thread Logic: Find all mails in the same thread
+    const threadMails = React.useMemo(() => {
+        if (!mail || !mail.threadId) return mail ? [mail] : []
+        return mails
+            .filter((m) => m.threadId === mail.threadId)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    }, [mail, mails])
+
+
     // Quick "Reply" implementation: just sends a new mail (to self/inbox for demo)
     const handleReply = (e: React.FormEvent) => {
         e.preventDefault()
@@ -72,14 +82,18 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
         // In a real app, this would send to the sender. 
         sendMail({
-            subject: `Re: ${mail.subject}`,
-            text: "This is a reply...",
+            subject: mail.subject.startsWith("Re:") ? mail.subject : `Re: ${mail.subject}`, // Keep Re: prefix
+            text: replyText,
             email: mail.email, // Reply to the sender (or the email associated with the mail)
             to: mail.email,
             name: user.email, // Sender name can be user's email or name
-            userEmail: user.email // Enforce ownership by current user
+            userEmail: user.email, // Enforce ownership by current user
+            threadId: mail.threadId // maintain thread
         })
+        setReplyText("") // Clear input
     }
+
+    const [replyText, setReplyText] = React.useState("")
 
 
     return (
@@ -204,8 +218,12 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => mail && markAsRead(mail.id, !mail.read)}>
-                            {mail?.read ? "Mark as unread" : "Mark as read"}
+                        <DropdownMenuItem onClick={() => {
+                            if (!threadMails.length) return
+                            const hasUnread = threadMails.some(m => !m.read)
+                            threadMails.forEach(m => markAsRead(m.id, !!hasUnread))
+                        }}>
+                            {threadMails.some(m => !m.read) ? "Mark thread as read" : "Mark thread as unread"}
                         </DropdownMenuItem>
                         <DropdownMenuItem>Star thread</DropdownMenuItem>
                         <DropdownMenuItem>Add label</DropdownMenuItem>
@@ -216,34 +234,40 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             <Separator />
             {mail ? (
                 <div className="flex flex-1 flex-col">
-                    <div className="flex items-start p-4">
-                        <div className="flex items-start gap-4 text-sm">
-                            <Avatar>
-                                <AvatarImage alt={mail.name} />
-                                <AvatarFallback>
-                                    {mail.name
-                                        .split(" ")
-                                        .map((chunk) => chunk[0])
-                                        .join("")}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1">
-                                <div className="font-semibold">{mail.name}</div>
-                                <div className="line-clamp-1 text-xs">{mail.subject}</div>
-                                <div className="line-clamp-1 text-xs">
-                                    <span className="font-medium">Reply-To:</span> {mail.email}
+                    <div className="flex-1 overflow-y-auto">
+                        {threadMails.map((threadMail, index) => (
+                            <div key={threadMail.id} className="flex flex-col">
+                                <div className="flex items-start p-4">
+                                    <div className="flex items-start gap-4 text-sm">
+                                        <Avatar>
+                                            <AvatarImage alt={threadMail.name} />
+                                            <AvatarFallback>
+                                                {threadMail.name
+                                                    .split(" ")
+                                                    .map((chunk) => chunk[0])
+                                                    .join("")}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="grid gap-1">
+                                            <div className="font-semibold">{threadMail.name}</div>
+                                            <div className="line-clamp-1 text-xs">{threadMail.subject}</div>
+                                            <div className="line-clamp-1 text-xs">
+                                                <span className="font-medium">Reply-To:</span> {threadMail.email}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {threadMail.date && (
+                                        <div className="ml-auto text-xs text-muted-foreground">
+                                            {format(new Date(threadMail.date), "PPpp")}
+                                        </div>
+                                    )}
                                 </div>
+                                <div className="whitespace-pre-wrap px-4 pb-4 text-sm">
+                                    {threadMail.text}
+                                </div>
+                                {index < threadMails.length - 1 && <Separator />}
                             </div>
-                        </div>
-                        {mail.date && (
-                            <div className="ml-auto text-xs text-muted-foreground">
-                                {format(new Date(mail.date), "PPpp")}
-                            </div>
-                        )}
-                    </div>
-                    <Separator />
-                    <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
-                        {mail.text}
+                        ))}
                     </div>
                     <Separator className="mt-auto" />
                     <div className="p-4">
@@ -252,6 +276,8 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                                 <Textarea
                                     className="p-4"
                                     placeholder={`Reply ${mail.name}...`}
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
                                 />
                                 <div className="flex items-center">
                                     <Label

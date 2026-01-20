@@ -210,6 +210,7 @@ export function MailComponent({
                 <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
                     <MailDisplay
                         mail={mails.find((item) => item.id === mail.selected) || null}
+                        mails={mails}
                     />
                 </ResizablePanel>
             </ResizablePanelGroup>

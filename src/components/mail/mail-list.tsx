@@ -1,4 +1,4 @@
-import { ComponentProps } from "react"
+import React, { ComponentProps } from "react"
 import { formatDistanceToNow } from "date-fns"
 
 import { cn } from "@/lib/utils"
@@ -15,10 +15,39 @@ interface MailListProps {
 export function MailList({ items }: MailListProps) {
     const [mail, setMail] = useMail()
 
+    // Group items by threadId
+    const threads = React.useMemo(() => {
+        const groups = new Map<string, Mail[]>()
+        items.forEach(item => {
+            const tid = item.threadId || item.id // fallback
+            if (!groups.has(tid)) groups.set(tid, [])
+            groups.get(tid)!.push(item)
+        })
+
+        // Convert to array of "Thread Display Items"
+        return Array.from(groups.values()).map((threadMails) => {
+            // Sort mails in thread by date descending to find latest
+            threadMails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            const latest = threadMails[0]
+
+            // Check if any in thread is unread
+            const isUnread = threadMails.some(m => !m.read)
+            // Collect all unique labels from the thread
+            const allLabels = Array.from(new Set(threadMails.flatMap(m => m.labels)))
+
+            return {
+                ...latest,
+                read: !isUnread, // If any unread, the thread is unread.
+                labels: allLabels,
+                replyCount: threadMails.length
+            }
+        })
+    }, [items])
+
     return (
         <ScrollArea className="h-screen">
             <div className="flex flex-col gap-2 p-4 pt-0">
-                {items.map((item) => (
+                {threads.map((item) => (
                     <button
                         key={item.id}
                         className={cn(
@@ -53,7 +82,12 @@ export function MailList({ items }: MailListProps) {
                                     })}
                                 </div>
                             </div>
-                            <div className="text-xs font-medium">{item.subject}</div>
+                            <div className="text-xs font-medium">
+                                {item.subject}
+                                {item.replyCount > 1 && (
+                                    <span className="ml-2 text-muted-foreground font-normal">({item.replyCount})</span>
+                                )}
+                            </div>
                         </div>
                         <div className="line-clamp-2 text-xs text-muted-foreground">
                             {item.text.substring(0, 300)}

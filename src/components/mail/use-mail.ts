@@ -24,6 +24,7 @@ export type Mail = {
     subject: string
     text: string
     date: string
+    threadId: string
 }
 
 export type MailFilter = "inbox" | "trash" | "archive" | "sent" | "drafts"

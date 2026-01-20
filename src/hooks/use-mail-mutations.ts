@@ -49,11 +49,15 @@ export function useMailMutations() {
         email: string, // Recipient
         name: string,
         to?: string,
-        userEmail: string // Sender
+        userEmail: string, // Sender
+        threadId?: string // Optional thread ID
     }) => {
         const mailContentId = id()
         const senderBoxId = id()
         const recipientBoxId = id()
+
+        // Use provided threadId or generate a new one
+        const threadId = mail.threadId || id()
 
         const recipientEmail = mail.to || mail.email
         const now = new Date().toISOString()
@@ -66,6 +70,7 @@ export function useMailMutations() {
                 senderEmail: mail.userEmail,
                 recipientEmail: recipientEmail,
                 createdAt: now,
+                threadId: threadId,
             }),
 
             // 2. Sender Box (Sent Folder)
