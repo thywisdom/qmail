@@ -47,37 +47,50 @@ export function useMailMutations() {
 
     // Simplistic 'Send' that creates a mail. 
     // In a real app this might trigger a server function or workflow.
+    // Simplistic 'Send' that creates a mail. -- UPDATED for Dual Copy
     const sendMail = (mail: {
         subject: string,
         text: string,
-        email: string, // This will be the RECIPIENT for sent mails
+        email: string, // This is the RECIPIENT
         name: string,
-        to?: string // Optional, but preferred for clarity in call sites
+        to?: string,
+        userEmail: string // The SENDER's email (current user)
     }) => {
-        const mailId = id()
-        const isReply = mail.subject.startsWith("Re:")
+        const senderMailId = id()
+        const recipientMailId = id()
 
-        // If it's a reply or compose, we treat it as SENT by us.
-        // We add "sent" to labels.
-        // For the 'email' field in schema: 
-        // - If Inbox: it's the Sender.
-        // - If Sent: it's the Recipient.
+        const recipientEmail = mail.to || mail.email
 
-        const labels = ["sent"]
+        const commonFields = {
+            subject: mail.subject,
+            text: mail.text,
+            date: new Date().toISOString(),
+        }
 
         transact([
-            db.tx.mails[mailId].update({
-                name: mail.name,
-                subject: mail.subject,
-                text: mail.text,
-                email: mail.to || mail.email, // Use explicit 'to' if provided
-                read: true, // Sent mails are read by default
-                date: new Date().toISOString(),
-                labels: labels,
+            // 1. Sender Copy (Sent Folder)
+            db.tx.mails[senderMailId].update({
+                ...commonFields,
+                name: "To: " + recipientEmail, // Display Name
+                email: recipientEmail, // Associate with recipient for display
+                ownerEmail: mail.userEmail, // Owned by SENDER
+                read: true,
+                labels: ["sent"],
+                archive: false,
+                trash: false
+            }),
+
+            // 2. Recipient Copy (Inbox)
+            db.tx.mails[recipientMailId].update({
+                ...commonFields,
+                name: mail.name, // Display Name (Sender's name)
+                email: mail.userEmail, // Associate with sender for display
+                ownerEmail: recipientEmail, // Owned by RECIPIENT
+                read: false, // Unread for recipient
+                labels: [], // No special labels (Input)
                 archive: false,
                 trash: false
             })
-            // Link to current user would happen here if we had the user ID easily accessible or context
         ])
     }
 

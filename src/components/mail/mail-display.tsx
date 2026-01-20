@@ -10,6 +10,7 @@ import {
     Trash2,
 } from "lucide-react"
 
+import { db } from "@/lib/db"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,10 +49,16 @@ interface MailDisplayProps {
 
 export function MailDisplay({ mail }: MailDisplayProps) {
     const today = new Date()
-    const { moveToTrash, archiveMail, sendMail, markAsRead } = useMailMutations()
+    const { moveToTrash, archiveMail, sendMail, markAsRead, deletePermanently } = useMailMutations()
+    const { user } = db.useAuth()
 
     const handleTrash = () => {
-        if (mail) moveToTrash(mail.id)
+        if (!mail) return
+        if (mail.trash) {
+            deletePermanently(mail.id)
+        } else {
+            moveToTrash(mail.id)
+        }
     }
 
     const handleArchive = () => {
@@ -61,15 +68,16 @@ export function MailDisplay({ mail }: MailDisplayProps) {
     // Quick "Reply" implementation: just sends a new mail (to self/inbox for demo)
     const handleReply = (e: React.FormEvent) => {
         e.preventDefault()
-        if (!mail) return
+        if (!mail || !user?.email) return
 
         // In a real app, this would send to the sender. 
-        // Here we just add to our own inbox to simulate activity.
         sendMail({
             subject: `Re: ${mail.subject}`,
             text: "This is a reply...",
-            email: "me@example.com",
-            name: "Me"
+            email: mail.email, // Reply to the sender (or the email associated with the mail)
+            to: mail.email,
+            name: user.email, // Sender name can be user's email or name
+            userEmail: user.email // Enforce ownership by current user
         })
     }
 
@@ -87,23 +95,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                         </TooltipTrigger>
                         <TooltipContent>Archive</TooltipContent>
                     </Tooltip>
+                    {/* Junk Removed */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" disabled={!mail} onClick={handleTrash}>
-                                <ArchiveX className="h-4 w-4" />
-                                <span className="sr-only">Move to junk</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Move to junk</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!mail} onClick={handleTrash}>
-                                <Trash2 className="h-4 w-4" />
+                                {mail?.trash ? <Trash2 className="h-4 w-4 text-red-600" /> : <Trash2 className="h-4 w-4" />}
                                 <span className="sr-only">Move to trash</span>
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Move to trash</TooltipContent>
+                        <TooltipContent>{mail?.trash ? "Delete permanently" : "Move to trash"}</TooltipContent>
                     </Tooltip>
                     <Separator orientation="vertical" className="mx-1 h-6" />
                     <Tooltip>

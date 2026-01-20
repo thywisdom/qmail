@@ -1,4 +1,5 @@
 import * as React from "react"
+import { db } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -24,6 +25,7 @@ export function MailCompose({ className }: MailComposeProps) {
     const [open, setOpen] = React.useState(false)
     const { sendMail } = useMailMutations()
     const [loading, setLoading] = React.useState(false)
+    const { user } = db.useAuth()
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -35,18 +37,20 @@ export function MailCompose({ className }: MailComposeProps) {
         const subject = formData.get("subject") as string
         const message = formData.get("message") as string
 
-        if (!to || !subject) {
+        if (!to || !subject || !user?.email) {
             setLoading(false)
+            console.error("Missing fields or user not logged in")
             return // show error
         }
 
         try {
             await sendMail({
                 name: "Me", // Sender name
-                email: to, // In our schema, 'email' is the associate contact/sender. For SENT mail, we might want this to be the RECIPIENT.
+                email: to, // Recipient for display
+                to: to, // Explicit recipient
                 subject: subject,
                 text: message,
-                to: to // We'll need to update sendMail to handle this or just rely on 'email' field
+                userEmail: user.email // Pass authenticated user email
             })
             setOpen(false)
         } catch (error) {

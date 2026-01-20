@@ -30,6 +30,7 @@ const _schema = i.schema({
       subject: i.string(),
       text: i.string(),
       trash: i.boolean().optional(),
+      ownerEmail: i.string().indexed(),
     }),
   },
   links: {
@@ -64,7 +65,7 @@ const _schema = i.schema({
 
 // This helps TypeScript display nicer intellisense
 type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema {}
+interface AppSchema extends _AppSchema { }
 const schema: AppSchema = _schema;
 
 export type { AppSchema };
