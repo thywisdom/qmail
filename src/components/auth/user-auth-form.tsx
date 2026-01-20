@@ -66,14 +66,11 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         }
 
         try {
-            console.log("Verifying code...")
             const result = await db.auth.signInWithMagicCode({ email: sentEmail, code })
-            console.log("Verification successful:", result)
 
             // Set session cookie for middleware
             document.cookie = `__session=true; path=/; max-age=2592000; SameSite=Lax`
 
-            console.log("Navigating to /mail...")
             router.push("/mail")
         } catch (error: any) {
             console.error("Verification failed:", error)

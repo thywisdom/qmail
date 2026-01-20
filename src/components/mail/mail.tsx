@@ -11,11 +11,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-// import { Input } from "@/registry/new-york/ui/input" // Adapted
-// import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/registry/new-york/ui/resizable" // Adapted
-// import { Separator } from "@/registry/new-york/ui/separator" // Adapted
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/registry/new-york/ui/tabs" // Adapted
-// import { TooltipProvider } from "@/registry/new-york/ui/tooltip" // Adapted
+
 
 import { Input } from "@/components/ui/input"
 import {
@@ -176,15 +172,7 @@ export function MailComponent({
                             </TabsList>
                         </div>
                         <Separator />
-                        {/* <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <form>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" />
-                </div>
-              </form>
-            </div> */}
-                        {/* Search temporarily disabled or move to header */}
+
                         <TabsContent value="all" className="m-0">
                             <MailList items={mails} />
                         </TabsContent>
