@@ -3,6 +3,9 @@
 import { i } from "@instantdb/react";
 
 const _schema = i.schema({
+  // We inferred 1 attribute!
+  // Take a look at this schema, and if everything looks good,
+  // run `push schema` again to enforce the types.
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed(),
@@ -13,10 +16,20 @@ const _schema = i.schema({
       imageURL: i.string().optional(),
       type: i.string().optional(),
     }),
-    todos: i.entity({
+    contacts: i.entity({
+      email: i.string(),
+      name: i.string(),
+    }),
+    mails: i.entity({
+      archive: i.boolean().optional(),
+      date: i.string(),
+      email: i.string(),
+      labels: i.json(),
+      name: i.string(),
+      read: i.boolean(),
+      subject: i.string(),
       text: i.string(),
-      done: i.boolean(),
-      createdAt: i.number(),
+      trash: i.boolean().optional(),
     }),
   },
   links: {
@@ -33,12 +46,20 @@ const _schema = i.schema({
         label: "linkedGuestUsers",
       },
     },
-  },
-  rooms: {
-    todos: {
-      presence: i.entity({}),
+    $usersMails: {
+      forward: {
+        on: "$users",
+        has: "many",
+        label: "mails",
+      },
+      reverse: {
+        on: "mails",
+        has: "one",
+        label: "user",
+      },
     },
   },
+  rooms: {},
 });
 
 // This helps TypeScript display nicer intellisense
