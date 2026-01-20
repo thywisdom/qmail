@@ -17,7 +17,7 @@ export default function MailPage() {
             $: {
                 where: { userEmail: user?.email || "" }
             },
-            message: {}
+            content: {}
         }
     })
 
@@ -37,7 +37,13 @@ export default function MailPage() {
 
     // Map Relational Data to Flat Mail Object for UI
     const mails: Mail[] = (data?.boxes || []).map((box: any) => {
-        const message = box.message?.[0]
+        // Robust extraction: Handle array or object for 'has: one' relation
+        const contentRaw = box.content
+        const message = Array.isArray(contentRaw) ? contentRaw[0] : contentRaw
+
+        // Console log for debugging (remove later)
+        if (!message) console.log("Missing content for box:", box)
+
         return {
             id: box.id,
             userEmail: box.userEmail,

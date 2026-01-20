@@ -3,7 +3,6 @@
 import * as React from "react"
 import {
     Archive,
-    ArchiveX,
     File,
     Inbox,
     Send,
@@ -159,13 +158,6 @@ export function MailComponent({
                                 icon: Send,
                                 variant: mail.filter === "sent" ? "default" : "ghost",
                                 onClick: () => setMail(prev => ({ ...prev, filter: "sent" }))
-                            },
-                            {
-                                title: "Junk",
-                                label: "",
-                                icon: ArchiveX,
-                                variant: mail.filter === "junk" ? "default" : "ghost",
-                                onClick: () => setMail(prev => ({ ...prev, filter: "junk" }))
                             },
                             {
                                 title: "Trash",

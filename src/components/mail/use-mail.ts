@@ -28,7 +28,7 @@ export type Mail = {
     archive?: boolean
 }
 
-export type MailFilter = "inbox" | "trash" | "archive" | "sent" | "junk" | "drafts"
+export type MailFilter = "inbox" | "trash" | "archive" | "sent" | "drafts"
 
 type Config = {
     selected: Mail["id"] | null

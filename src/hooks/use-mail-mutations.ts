@@ -77,7 +77,7 @@ export function useMailMutations() {
                 status: "sent",
                 read: true,
                 labels: [],
-            }).link({ message: mailContentId }), // Link to content
+            }).link({ content: mailContentId }), // Link to content
 
             // 3. Recipient Box (Inbox)
             db.tx.boxes[recipientBoxId].update({
@@ -85,7 +85,7 @@ export function useMailMutations() {
                 status: "inbox",
                 read: false,
                 labels: [],
-            }).link({ message: mailContentId }), // Link to content
+            }).link({ content: mailContentId }), // Link to content
         ])
     }
 
