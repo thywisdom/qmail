@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/tabs"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-import { AccountSwitcher } from "@/components/mail/account-switcher"
+import { Account } from "@/components/mail/account"
 import { MailDisplay } from "@/components/mail/mail-display"
 import { MailList } from "@/components/mail/mail-list"
 import { Nav } from "@/components/mail/nav"
@@ -125,61 +125,61 @@ export function MailComponent({
                         "min-w-[50px] transition-all duration-300 ease-in-out"
                     )}
                 >
-                    <div
-                        className={cn(
-                            "flex h-[52px] items-center justify-center",
-                            isCollapsed ? "h-[52px]" : "px-2"
-                        )}
-                    >
-                        <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} />
+                    <div className="flex flex-col h-full">
+                        <div
+                            className={cn(
+                                "flex h-[52px] items-center justify-center",
+                                isCollapsed ? "h-[52px]" : "px-2"
+                            )}
+                        >
+                            <MailCompose isCollapsed={isCollapsed} className={isCollapsed ? "justify-center px-0" : ""} />
+                        </div>
+                        <Separator />
+                        <Nav
+                            isCollapsed={isCollapsed}
+                            links={[
+                                {
+                                    title: "Inbox",
+                                    label: unreadCount > 0 ? unreadCount.toString() : "",
+                                    icon: Inbox,
+                                    variant: mail.filter === "inbox" ? "default" : "ghost",
+                                    onClick: () => setMail(prev => ({ ...prev, filter: "inbox" }))
+                                },
+                                // Drafts removed.
+                                // Sent functionality implemented via labels.
+                                {
+                                    title: "Sent",
+                                    label: "",
+                                    icon: Send,
+                                    variant: mail.filter === "sent" ? "default" : "ghost",
+                                    onClick: () => setMail(prev => ({ ...prev, filter: "sent" }))
+                                },
+                                {
+                                    title: "Trash",
+                                    label: trashCount > 0 ? trashCount.toString() : "",
+                                    icon: Trash2,
+                                    variant: mail.filter === "trash" ? "default" : "ghost",
+                                    onClick: () => setMail(prev => ({ ...prev, filter: "trash" }))
+                                },
+                                {
+                                    title: "Archive",
+                                    label: archiveCount > 0 ? archiveCount.toString() : "",
+                                    icon: Archive,
+                                    variant: mail.filter === "archive" ? "default" : "ghost",
+                                    onClick: () => setMail(prev => ({ ...prev, filter: "archive" }))
+                                },
+                            ]}
+                        />
+                        <Separator />
+                        <div className="mt-auto p-2">
+                            <Account isCollapsed={isCollapsed} accounts={accounts} />
+                        </div>
                     </div>
-                    <Separator />
-                    <div className="p-2">
-                        <MailCompose className={isCollapsed ? "justify-center px-0" : ""} />
-                    </div>
-                    <Separator />
-                    <Nav
-                        isCollapsed={isCollapsed}
-                        links={[
-                            {
-                                title: "Inbox",
-                                label: unreadCount > 0 ? unreadCount.toString() : "",
-                                icon: Inbox,
-                                variant: mail.filter === "inbox" ? "default" : "ghost",
-                                onClick: () => setMail(prev => ({ ...prev, filter: "inbox" }))
-                            },
-                            // Drafts removed.
-                            // Sent functionality implemented via labels.
-                            {
-                                title: "Sent",
-                                label: "",
-                                icon: Send,
-                                variant: mail.filter === "sent" ? "default" : "ghost",
-                                onClick: () => setMail(prev => ({ ...prev, filter: "sent" }))
-                            },
-                            {
-                                title: "Trash",
-                                label: trashCount > 0 ? trashCount.toString() : "",
-                                icon: Trash2,
-                                variant: mail.filter === "trash" ? "default" : "ghost",
-                                onClick: () => setMail(prev => ({ ...prev, filter: "trash" }))
-                            },
-                            {
-                                title: "Archive",
-                                label: archiveCount > 0 ? archiveCount.toString() : "",
-                                icon: Archive,
-                                variant: mail.filter === "archive" ? "default" : "ghost",
-                                onClick: () => setMail(prev => ({ ...prev, filter: "archive" }))
-                            },
-                        ]}
-                    />
-                    <Separator />
-                    {/* Removed extra sections as requested */}
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
                     <Tabs defaultValue="all">
-                        <div className="flex items-center px-4 py-2">
+                        <div className="flex h-[44px] items-center px-4">
                             <h1 className="text-xl font-bold capitalize">{mail.filter}</h1>
                             <TabsList className="ml-auto">
                                 <TabsTrigger

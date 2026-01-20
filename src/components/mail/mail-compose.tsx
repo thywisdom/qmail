@@ -19,9 +19,10 @@ import { cn } from "@/lib/utils"
 
 interface MailComposeProps {
     className?: string
+    isCollapsed?: boolean
 }
 
-export function MailCompose({ className }: MailComposeProps) {
+export function MailCompose({ className, isCollapsed }: MailComposeProps) {
     const [open, setOpen] = React.useState(false)
     const { sendMail } = useMailMutations()
     const [loading, setLoading] = React.useState(false)
@@ -64,12 +65,15 @@ export function MailCompose({ className }: MailComposeProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button
-                    variant="outline"
-                    className={cn("w-full justify-start gap-2", className)}
-                    size="lg"
+                    variant="default"
+                    className={cn(
+                        "justify-start gap-2",
+                        isCollapsed ? "h-9 w-9 justify-center px-0" : "h-9 w-full px-3",
+                        className
+                    )}
                 >
                     <PenSquare className="h-4 w-4" />
-                    Compose
+                    {!isCollapsed && "Compose"}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px]">
