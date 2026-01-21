@@ -15,6 +15,7 @@ const _schema = i.schema({
       name: i.string().optional(),
       bio: i.string().optional(),
       preferredAIRule: i.string().optional(),
+      aiCustomPrompt: i.string().optional(),
       status: i.string().optional(), // "dnd", "busy", "confidential", "open"
     }),
     // Content of the mail (shared/immutable)

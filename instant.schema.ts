@@ -15,6 +15,9 @@ const _schema = i.schema({
       email: i.string().unique().indexed().optional(),
       imageURL: i.string().optional(),
       type: i.string().optional(),
+      accountStatus: i.string().optional(), // Used to gate app access
+      preferredAIRule: i.string().optional(), // Existing placeholder in DB/UI
+      aiCustomPrompt: i.string().optional(), // New field for custom system role
     }),
     boxes: i.entity({
       labels: i.json(),
@@ -63,7 +66,7 @@ const _schema = i.schema({
 
 // This helps TypeScript display nicer intellisense
 type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema {}
+interface AppSchema extends _AppSchema { }
 const schema: AppSchema = _schema;
 
 export type { AppSchema };

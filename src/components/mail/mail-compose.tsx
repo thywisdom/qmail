@@ -11,11 +11,11 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-
 import { Textarea } from "@/components/ui/textarea"
-import { PenSquare } from "lucide-react"
+import { PenSquare, Sparkles, Loader2 } from "lucide-react"
 import { useMailMutations } from "@/hooks/use-mail-mutations"
 import { cn } from "@/lib/utils"
+import { generateEmail } from "@/app/actions/generate-email"
 
 interface MailComposeProps {
     className?: string
@@ -28,36 +28,71 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
     const [loading, setLoading] = React.useState(false)
     const { user } = db.useAuth()
 
+    // Controlled inputs for AI manipulation
+    const [to, setTo] = React.useState("")
+    const [subject, setSubject] = React.useState("")
+    const [message, setMessage] = React.useState("")
+
+    // AI State
+    const [aiLoading, setAiLoading] = React.useState(false)
+
+    // Fetch user profile for custom prompt
+    const { data: userData } = db.useQuery(user?.email ? { $users: { $: { where: { email: user.email } } } } : null)
+    const userProfile = userData?.$users?.[0]
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setLoading(true)
-        const formData = new FormData(e.currentTarget)
-
-        // Simple validation could be added here
-        const to = formData.get("to") as string
-        const subject = formData.get("subject") as string
-        const message = formData.get("message") as string
 
         if (!to || !subject || !user?.email) {
             setLoading(false)
             console.error("Missing fields or user not logged in")
-            return // show error
+            return
         }
 
         try {
             await sendMail({
-                name: "Me", // Sender name
-                email: to, // Recipient for display
-                to: to, // Explicit recipient
+                name: "Me",
+                email: to,
+                to: to,
                 subject: subject,
                 text: message,
-                userEmail: user.email // Pass authenticated user email
+                userEmail: user.email
             })
             setOpen(false)
+            // Reset form
+            setTo("")
+            setSubject("")
+            setMessage("")
         } catch (error) {
             console.error("Failed to send", error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleAIGenerate = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        if (!subject && !message) {
+            // Ideally show a toast here
+            console.log("Subject or content required for AI generation")
+            return
+        }
+
+        setAiLoading(true)
+        try {
+            const customPrompt = userProfile?.aiCustomPrompt || ""
+            const result = await generateEmail(subject, message, customPrompt)
+
+            if (result.success && result.text) {
+                setMessage(result.text)
+            } else {
+                console.error("AI Error:", result.error)
+            }
+        } catch (e) {
+            console.error("AI Exception:", e)
+        } finally {
+            setAiLoading(false)
         }
     }
 
@@ -94,6 +129,8 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
                                 className="border-0 focus-visible:ring-0 shadow-none px-0 h-9"
                                 required
                                 autoFocus
+                                value={to}
+                                onChange={(e) => setTo(e.target.value)}
                             />
                         </div>
                         <div className="flex items-center gap-2 border-b pb-2">
@@ -104,6 +141,8 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
                                 placeholder="Subject"
                                 className="border-0 focus-visible:ring-0 shadow-none px-0 h-9 text-base font-medium"
                                 required
+                                value={subject}
+                                onChange={(e) => setSubject(e.target.value)}
                             />
                         </div>
                         <div className="flex-1 pt-2">
@@ -113,14 +152,30 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
                                 className="min-h-[300px] border-0 focus-visible:ring-0 resize-none p-0 shadow-none text-base"
                                 placeholder="Type your message here..."
                                 required
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
                             />
                         </div>
                     </div>
                     <DialogFooter className="px-6 pb-6 sm:justify-between items-center">
-                        <div className="text-xs text-muted-foreground">
-                            Draft saved automatically
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={loading || aiLoading}
+                                onClick={handleAIGenerate}
+                                className="gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:border-indigo-800 dark:hover:bg-indigo-950/50"
+                            >
+                                {aiLoading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                )}
+                                {aiLoading ? "Generating..." : "AI Generate"}
+                            </Button>
                         </div>
-                        <Button type="submit" disabled={loading} size="default">
+                        <Button type="submit" disabled={loading || aiLoading} size="default">
                             {loading ? "Sending..." : "Send Message"}
                         </Button>
                     </DialogFooter>

@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
@@ -42,7 +35,7 @@ export default function AccountPage() {
             setName(userProfile.name || "")
             setBio(userProfile.bio || "")
             setAvatarUrl(userProfile.avatarUrl || "/images/logo.png")
-            setAiRule(userProfile.preferredAIRule || "standard")
+            setAiRule(userProfile.aiCustomPrompt || "")
             setStatus(userProfile.status || "open")
         }
     }, [userProfile])
@@ -53,7 +46,7 @@ export default function AccountPage() {
         if (name && name !== "shadcn" && name !== "User") completed += 20;
         if (bio && bio.length > 5) completed += 20;
         if (avatarUrl && avatarUrl !== "/images/logo.png") completed += 20;
-        if (aiRule) completed += 20;
+        if (aiRule && aiRule.length > 10) completed += 20;
         if (status) completed += 20;
         setCompletion(completed);
     }, [name, bio, avatarUrl, aiRule, status])
@@ -68,7 +61,7 @@ export default function AccountPage() {
                     name,
                     bio,
                     avatarUrl,
-                    preferredAIRule: aiRule,
+                    aiCustomPrompt: aiRule,
                     status,
                 })
             )
@@ -142,26 +135,39 @@ export default function AccountPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm">
+                <Card className="md:col-span-2 shadow-sm">
                     <CardHeader>
-                        <CardTitle>AI Preferences</CardTitle>
-                        <CardDescription>Customize how the AI assists you.</CardDescription>
+                        <CardTitle>AI Custom Role</CardTitle>
+                        <CardDescription>Customize the AI assistant&apos;s system role to match your style.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="ai-rule">Preferred AI Style</Label>
-                            <Select value={aiRule} onValueChange={setAiRule}>
-                                <SelectTrigger id="ai-rule">
-                                    <SelectValue placeholder="Select a rule" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="concise">Concise</SelectItem>
-                                    <SelectItem value="detailed">Detailed</SelectItem>
-                                    <SelectItem value="formal">Formal</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">Determines the tone and length of generated drafts.</p>
+                            <Label htmlFor="ai-custom-prompt">Your Custom System Prompt</Label>
+                            <Textarea
+                                id="ai-custom-prompt"
+                                value={aiRule}
+                                onChange={(e) => setAiRule(e.target.value)}
+                                placeholder="e.g. 'Always sign off with Best, Suman. Be concise and professional.'"
+                                className="min-h-[120px] font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                This prompt will be appended to the system&apos;s default instructions when generating drafts.
+                            </p>
+                        </div>
+
+                        <div className="rounded-md bg-muted p-4">
+                            <h4 className="mb-2 text-sm font-semibold">Application System Prompt (Context)</h4>
+                            <p className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">
+                                {`You are an AI Mail Assistant.
+Given a subject and short content, generate a complete, well‑structured email.
+
+Tasks:
+- Expand minimal input into a clear draft.
+- Infer user intent and fill missing details naturally.
+- Customize tone based on user instructions.
+
+[YOUR CUSTOM PROMPT WILL BE INSERTED HERE]`}
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
