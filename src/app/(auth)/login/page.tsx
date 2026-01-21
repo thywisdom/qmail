@@ -18,6 +18,7 @@ export default function AuthenticationPage() {
                         src="/images/Auth_background.webp"
                         alt="Background"
                         fill
+                        sizes="50vw"
                         className="object-cover opacity-90 brightness-50"
                         priority
                     />
