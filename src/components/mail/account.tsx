@@ -19,11 +19,9 @@ import {
     LogOut,
     LayoutDashboard,
     ChevronsUpDown,
-    CreditCard,
-    Bell,
-    Sparkles,
-    BadgeCheck
+    BadgeCheck,
 } from "lucide-react"
+import { IconDatabase } from "@tabler/icons-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -42,11 +40,14 @@ export function Account({
 }: AccountProps) {
     const router = useRouter()
     const { user } = db.useAuth()
+    const { data: userData } = db.useQuery(user?.email ? { $users: { $: { where: { email: user.email } } } } : null)
+    const userProfile = userData?.$users?.[0]
 
     const displayEmail = user?.email || accounts[0]?.email || "user@example.com"
-    const displayLabel = accounts.find(a => a.email === displayEmail)?.label || "User"
+    const displayLabel = userProfile?.name || accounts.find(a => a.email === displayEmail)?.label || "User"
     // Extract initials for avatar fallback
     const initials = displayLabel.substring(0, 2).toUpperCase()
+    const avatarUrl = userProfile?.avatarUrl || undefined
 
     const handleLogout = async () => {
         try {
@@ -74,7 +75,7 @@ export function Account({
                     )}
                 >
                     <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage src="" /> {/* Placeholder for avatar URL if available */}
+                        <AvatarImage src={avatarUrl} /> {/* Placeholder for avatar URL if available */}
                         <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                     </Avatar>
 
@@ -100,7 +101,7 @@ export function Account({
                 <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                         <Avatar className="h-8 w-8 rounded-lg">
-                            <AvatarImage src="" />
+                            <AvatarImage src={avatarUrl} />
                             <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                         </Avatar>
                         <div className="grid flex-1 text-left text-sm leading-tight">
@@ -113,7 +114,7 @@ export function Account({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/account')}>
                         <BadgeCheck className="mr-2 h-4 w-4" />
                         Account
                     </DropdownMenuItem>
@@ -121,13 +122,9 @@ export function Account({
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         Dashboard
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Billing
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <Bell className="mr-2 h-4 w-4" />
-                        Notifications
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/data-control')}>
+                        <IconDatabase className="mr-2 h-4 w-4" />
+                        Data Control
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

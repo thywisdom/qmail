@@ -3,6 +3,9 @@
 import { i } from "@instantdb/react";
 
 const _schema = i.schema({
+  // We inferred 1 attribute!
+  // Take a look at this schema, and if everything looks good,
+  // run `push schema` again to enforce the types.
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed(),
@@ -13,36 +16,22 @@ const _schema = i.schema({
       imageURL: i.string().optional(),
       type: i.string().optional(),
     }),
-    // Content of the mail (shared/immutable)
-    mails: i.entity({
-      subject: i.string(),
-      body: i.string(),
-      senderEmail: i.string(),
-      recipientEmail: i.string(), // Main recipient for reference
-      createdAt: i.string(),
-      threadId: i.string().indexed(), // Group messages by thread
-    }),
-    // User-specific state (folder, read status)
     boxes: i.entity({
-      userEmail: i.string().indexed(), // Owner
-      status: i.string().indexed(), // "inbox", "sent", "trash", "archive", "draft"
+      labels: i.json(),
       read: i.boolean(),
-      labels: i.json(), // Extra tags
+      status: i.string().indexed(),
+      userEmail: i.string().indexed(),
+    }),
+    mails: i.entity({
+      body: i.string(),
+      createdAt: i.string(),
+      recipientEmail: i.string(),
+      senderEmail: i.string(),
+      subject: i.string(),
+      threadId: i.string().indexed(),
     }),
   },
   links: {
-    $boxesMails: {
-      forward: {
-        on: "boxes",
-        has: "one",
-        label: "content",
-      },
-      reverse: {
-        on: "mails",
-        has: "many",
-        label: "boxes",
-      }
-    },
     $usersLinkedPrimaryUser: {
       forward: {
         on: "$users",
@@ -56,12 +45,25 @@ const _schema = i.schema({
         label: "linkedGuestUsers",
       },
     },
+    boxesContent: {
+      forward: {
+        on: "boxes",
+        has: "one",
+        label: "content",
+      },
+      reverse: {
+        on: "mails",
+        has: "many",
+        label: "boxes",
+      },
+    },
   },
+  rooms: {},
 });
 
 // This helps TypeScript display nicer intellisense
 type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema { }
+interface AppSchema extends _AppSchema {}
 const schema: AppSchema = _schema;
 
 export type { AppSchema };

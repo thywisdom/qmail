@@ -1,102 +1,75 @@
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
+import { IconArchive, IconInbox, IconSend, IconTrash } from "@tabler/icons-react"
+import { db } from "@/lib/db"
 
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardContent
 } from "@/components/ui/card"
 
 export function SectionCards() {
+  const { user } = db.useAuth()
+
+  // In real app, querying counts
+  // For now we can use db.useQuery to get all boxes for user and filter client side or use component state if centralized 
+  // Optimization: The 'total' counts should ideally be aggregations. 
+  // For now, let's fetch 'boxes' and count.
+
+  const { data } = db.useQuery(user?.email ? {
+    boxes: {
+      $: {
+        where: { userEmail: user.email }
+      }
+    }
+  } : null)
+
+  const boxes = data?.boxes || []
+
+  const inboxCount = boxes.filter((b: any) => b.status === 'inbox').length
+  const sentCount = boxes.filter((b: any) => b.status === 'sent').length
+  const trashCount = boxes.filter((b: any) => b.status === 'trash').length
+  const archiveCount = boxes.filter((b: any) => b.status === 'archive').length
+
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
-          </CardAction>
+    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Inbox</CardTitle>
+          <IconInbox className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
-          </div>
-        </CardFooter>
+        <CardContent>
+          <div className="text-2xl font-bold">{inboxCount}</div>
+        </CardContent>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
-            </Badge>
-          </CardAction>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Sent</CardTitle>
+          <IconSend className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
-          </div>
-        </CardFooter>
+        <CardContent>
+          <div className="text-2xl font-bold">{sentCount}</div>
+        </CardContent>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
-          </CardAction>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Archive</CardTitle>
+          <IconArchive className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
-        </CardFooter>
+        <CardContent>
+          <div className="text-2xl font-bold">{archiveCount}</div>
+        </CardContent>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +4.5%
-            </Badge>
-          </CardAction>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Trash</CardTitle>
+          <IconTrash className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
-        </CardFooter>
+        <CardContent>
+          <div className="text-2xl font-bold">{trashCount}</div>
+        </CardContent>
       </Card>
     </div>
   )
 }
+

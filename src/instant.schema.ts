@@ -10,8 +10,12 @@ const _schema = i.schema({
     }),
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
-      imageURL: i.string().optional(),
+      avatarUrl: i.string().optional(),
       type: i.string().optional(),
+      name: i.string().optional(),
+      bio: i.string().optional(),
+      preferredAIRule: i.string().optional(),
+      status: i.string().optional(), // "dnd", "busy", "confidential", "open"
     }),
     // Content of the mail (shared/immutable)
     mails: i.entity({
@@ -20,7 +24,7 @@ const _schema = i.schema({
       senderEmail: i.string(),
       recipientEmail: i.string(), // Main recipient for reference
       createdAt: i.string(),
-      threadId: i.string().indexed(), // Group messages by thread
+      threadId: i.any().optional(), // Group messages by thread - relaxed to any to fix schema push
     }),
     // User-specific state (folder, read status)
     boxes: i.entity({
