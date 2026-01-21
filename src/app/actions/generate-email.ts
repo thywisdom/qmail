@@ -1,7 +1,7 @@
 "use server"
 
 import { Groq } from "groq-sdk"
-import { db } from "@/lib/db"
+
 
 // Initialize Groq client
 // Note: It automatically picks up GROQ_API_KEY from process.env

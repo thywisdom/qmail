@@ -4,6 +4,8 @@ import {
     Calendar as CalendarIcon,
     MoreVertical,
     Trash2,
+    Sparkles,
+    Loader2
 } from "lucide-react"
 
 import { db } from "@/lib/db"
@@ -20,14 +22,12 @@ import {
 } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { Label } from "@/components/ui/label"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
     Tooltip,
@@ -38,6 +38,7 @@ import {
 import { Mail } from "@/components/mail/use-mail"
 import { useMailMutations } from "@/hooks/use-mail-mutations"
 import React from "react"
+import { generateReply } from "@/app/actions/generate-reply"
 
 interface MailDisplayProps {
     mail: Mail | null
@@ -47,6 +48,9 @@ interface MailDisplayProps {
 export function MailDisplay({ mail, mails }: MailDisplayProps) {
     const { moveToTrash, archiveMail, sendMail, markAsRead, deletePermanently } = useMailMutations()
     const { user } = db.useAuth()
+
+    const [replyText, setReplyText] = React.useState("")
+    const [isGeneratingReply, setIsGeneratingReply] = React.useState(false)
 
     const handleTrash = () => {
         if (!mail) return
@@ -88,7 +92,29 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
         setReplyText("") // Clear input
     }
 
-    const [replyText, setReplyText] = React.useState("")
+    const onGenerateReply = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        if (!threadMails.length) return
+
+        setIsGeneratingReply(true)
+        try {
+            // Construct context from thread
+            const context = threadMails.map(m =>
+                `From: ${m.name || m.email}\nSubject: ${m.subject}\nBody: ${m.text}\nDate: ${m.date}\n---\n`
+            ).join("\n")
+
+            const result = await generateReply(context)
+            if (result.success && result.text) {
+                setReplyText(result.text)
+            } else {
+                console.error("Failed to generate reply")
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsGeneratingReply(false)
+        }
+    }
 
 
     return (
@@ -214,13 +240,21 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                                     onChange={(e) => setReplyText(e.target.value)}
                                 />
                                 <div className="flex items-center">
-                                    <Label
-                                        htmlFor="mute"
-                                        className="flex items-center gap-2 text-xs font-normal"
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                        onClick={onGenerateReply}
+                                        disabled={isGeneratingReply}
                                     >
-                                        <Switch id="mute" aria-label="Mute thread" /> Mute this
-                                        thread
-                                    </Label>
+                                        {isGeneratingReply ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Sparkles className="h-4 w-4" />
+                                        )}
+                                        {isGeneratingReply ? "Generating..." : "Generate Reply"}
+                                    </Button>
                                     <Button
                                         type="submit"
                                         size="sm"
