@@ -13,6 +13,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 // import { toast } from "sonner" // Assuming sonner is installed, otherwise verify
 
+import { enhanceUserPrompt } from "@/app/actions/enhance-prompt"
+import { Sparkles, Loader2 } from "lucide-react"
+
+// ... imports remain the same, just appending/merging
+
 export default function AccountPage() {
     const { user } = db.useAuth()
 
@@ -28,6 +33,9 @@ export default function AccountPage() {
     const [completion, setCompletion] = useState(0)
     const [isSaving, setIsSaving] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
+
+    // New state for enhancement loading
+    const [isEnhancing, setIsEnhancing] = useState(false)
 
     // Update state when data loads
     React.useEffect(() => {
@@ -71,6 +79,21 @@ export default function AccountPage() {
             console.error("Failed to save", error)
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleEnhance = async () => {
+        if (!aiRule || aiRule.length < 3) return
+        setIsEnhancing(true)
+        try {
+            const result = await enhanceUserPrompt(aiRule)
+            if (result.success && result.text) {
+                setAiRule(result.text)
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setIsEnhancing(false)
         }
     }
 
@@ -142,7 +165,19 @@ export default function AccountPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="ai-custom-prompt">Your Custom System Prompt</Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="ai-custom-prompt">Your Custom System Prompt</Label>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                    onClick={handleEnhance}
+                                    disabled={isEnhancing || !aiRule}
+                                >
+                                    {isEnhancing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                    Enhance Prompt
+                                </Button>
+                            </div>
                             <Textarea
                                 id="ai-custom-prompt"
                                 value={aiRule}
