@@ -18,6 +18,29 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const [sentEmail, setSentEmail] = React.useState<string>("")
     const [error, setError] = React.useState<string>("")
 
+    // Checking phase: Once we have a user (from useAuth), check their profile status
+    const { user } = db.useAuth()
+    const { data: userData, isLoading: isQueryLoading } = db.useQuery(
+        user?.email ? {
+            $users: {
+                $: {
+                    where: { email: user.email }
+                }
+            }
+        } : null
+    )
+
+    React.useEffect(() => {
+        if (user && !isQueryLoading) {
+            const userProfile = userData?.$users?.[0]
+            if (userProfile && userProfile.accountStatus === 'active') {
+                router.push("/mail")
+            } else {
+                router.push("/setup")
+            }
+        }
+    }, [user, isQueryLoading, userData, router])
+
     async function onSubmit(event: React.SyntheticEvent) {
         event.preventDefault()
         if (isLoading) return
@@ -71,13 +94,22 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             // Set session cookie for middleware
             document.cookie = `__session=true; path=/; max-age=2592000; SameSite=Lax`
 
-            router.push("/mail")
+            // We don't redirect here immediately. 
+            // We let the useEffect above handle it once the user profile query resolves.
         } catch (error: any) {
             console.error("Verification failed:", error)
-            setError(error.body?.message || error.message || "Failed to verify code. Please check your code.")
-        } finally {
+
+            let message = error.body?.message || error.message || "Failed to verify code."
+
+            // Handle specific "Record not found" error from InstantDB which implies invalid/expired code
+            if (message.includes("Record not found")) {
+                message = "Invalid or expired verification code. Please check your code and try again."
+            }
+
+            setError(message)
             setIsLoading(false)
         }
+        // Note: We don't set isLoading to false on success, as we want to show loading while we redirect
     }
 
     if (sentEmail) {

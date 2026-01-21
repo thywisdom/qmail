@@ -19,13 +19,11 @@ export default function DashboardLayout({
             }
         >
             <AppSidebar variant="sidebar" />
-            <SidebarInset>
+            <SidebarInset className="h-screen overflow-hidden">
                 <SiteHeader />
-                <div className="flex flex-1 flex-col">
-                    <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                            {children}
-                        </div>
+                <div className="flex flex-1 flex-col overflow-hidden">
+                    <div className="@container/main flex flex-1 flex-col gap-2 overflow-y-auto p-4 md:p-6">
+                        {children}
                     </div>
                 </div>
             </SidebarInset>

@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
     }
 
     // If user is NOT authenticated and tries to access protected pages, redirect to login
-    if (!session && url.pathname.startsWith("/mail")) {
+    if (!session && (url.pathname.startsWith("/mail") || url.pathname.startsWith("/setup"))) {
         url.pathname = "/login";
         return NextResponse.redirect(url);
     }
@@ -22,5 +22,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/", "/login", "/mail/:path*"],
+    matcher: ["/", "/login", "/mail/:path*", "/setup/:path*"],
 };

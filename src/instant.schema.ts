@@ -11,7 +11,7 @@ const _schema = i.schema({
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
       avatarUrl: i.string().optional(),
-      type: i.string().optional(),
+      accountStatus: i.string().optional(),
       name: i.string().optional(),
       bio: i.string().optional(),
       preferredAIRule: i.string().optional(),

@@ -23,14 +23,8 @@ export default function MailPage() {
         return <div className="flex h-screen items-center justify-center">Loading...</div>
     }
 
-    if (!user) {
-        if (typeof document !== "undefined") {
-            document.cookie = "__session=; path=/; max-age=0;"
-        }
-        if (typeof window !== "undefined") {
-            window.location.href = "/login"
-        }
-        return null
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>
     }
 
     // Map Relational Data to Flat Mail Object for UI

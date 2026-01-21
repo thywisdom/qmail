@@ -3,6 +3,7 @@
 import { useState } from "react"
 import * as React from "react"
 import { db } from "@/lib/db"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,6 +33,8 @@ export default function AccountPage() {
     const [aiRule, setAiRule] = useState("standard")
     const [status, setStatus] = useState("open")
     const [completion, setCompletion] = useState(0)
+    const [isSaving, setIsSaving] = useState(false)
+    const [isSuccess, setIsSuccess] = useState(false)
 
     // Update state when data loads
     React.useEffect(() => {
@@ -55,20 +58,27 @@ export default function AccountPage() {
         setCompletion(completed);
     }, [name, bio, avatarUrl, aiRule, status])
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!user || !userProfile) return
+        setIsSaving(true)
 
-        db.transact(
-            db.tx.$users[userProfile.id].update({
-                name,
-                bio,
-                avatarUrl,
-                preferredAIRule: aiRule,
-                status,
-            })
-        )
-        // toast.success("Profile updated successfully")
-        console.log("Saved profile")
+        try {
+            await db.transact(
+                db.tx.$users[userProfile.id].update({
+                    name,
+                    bio,
+                    avatarUrl,
+                    preferredAIRule: aiRule,
+                    status,
+                })
+            )
+            setIsSuccess(true)
+            setTimeout(() => setIsSuccess(false), 3000)
+        } catch (error) {
+            console.error("Failed to save", error)
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     if (!user) {
@@ -184,7 +194,26 @@ export default function AccountPage() {
             </div>
 
             <div className="flex justify-end pt-4 pb-8">
-                <Button onClick={handleSave} size="lg" className="w-full md:w-auto px-8">Save Changes</Button>
+                <Button
+                    onClick={handleSave}
+                    size="lg"
+                    className={cn(
+                        "w-full md:w-auto px-8 transition-all duration-300",
+                        isSuccess ? "bg-green-600 hover:bg-green-700" : ""
+                    )}
+                    disabled={isSaving}
+                >
+                    {isSaving ? (
+                        <>Saving...</>
+                    ) : isSuccess ? (
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Changes Saved
+                        </>
+                    ) : (
+                        "Save Changes"
+                    )}
+                </Button>
             </div>
         </div>
     )
