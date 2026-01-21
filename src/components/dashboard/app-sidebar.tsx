@@ -25,7 +25,6 @@ import { NavMain } from "@/components/dashboard/nav-main"
 import { NavUser } from "@/components/dashboard/nav-user"
 
 const data = {
-  // user: { ... }, // Replaced with dynamic data
   navMain: [
     {
       title: "Back",
@@ -39,7 +38,7 @@ const data = {
     },
     {
       title: "Account",
-      url: "/dashboard/account", // Verified URL
+      url: "/dashboard/account",
       icon: IconUserCircle,
     },
     {
@@ -50,7 +49,7 @@ const data = {
     {
       title: "Quantsphere",
       url: "/dashboard/quantsphere",
-      icon: IconSettings, // Using Settings icon for now as placeholder
+      icon: IconSettings,
     },
   ],
 }

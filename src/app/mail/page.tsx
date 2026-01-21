@@ -4,6 +4,7 @@ import { MailComponent } from "@/components/mail/mail"
 import { db } from "@/lib/db"
 import { useEffect, useState } from "react"
 import { type Mail } from "@/components/mail/use-mail"
+import { mapBoxToMail } from "@/lib/mail-utils"
 
 export default function MailPage() {
 
@@ -23,41 +24,10 @@ export default function MailPage() {
         return <div className="flex h-screen items-center justify-center">Loading...</div>
     }
 
-    if (isLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>
-    }
+
 
     // Map Relational Data to Flat Mail Object for UI
-    const mails: Mail[] = (data?.boxes || []).map((box: any) => {
-        // Robust extraction: Handle array or object for 'has: one' relation
-        const contentRaw = box.content
-        const message = Array.isArray(contentRaw) ? contentRaw[0] : contentRaw
-
-
-        return {
-            id: box.id,
-            userEmail: box.userEmail,
-            status: box.status,
-            read: box.read,
-            labels: box.labels,
-            trash: box.status === "trash",
-            archive: box.status === "archive",
-
-            // Flatten Content
-            subject: message?.subject || "(No Subject)",
-            text: message?.body || "", // Map 'body' to 'text' for UI
-            date: message?.createdAt || new Date().toISOString(),
-
-            // Name mapping: 
-            // If 'sent', name is Recipient. 
-            // If 'inbox', name is Sender.
-            name: box.status === "sent" ? (message?.recipientEmail || "Recipient") : (message?.senderEmail || "Sender"),
-            email: box.status === "sent" ? (message?.recipientEmail || "") : (message?.senderEmail || ""),
-
-            message: message, // Keep raw if needed
-            threadId: message?.threadId // Map threadId
-        }
-    })
+    const mails: Mail[] = (data?.boxes || []).map(mapBoxToMail)
 
     // Construct account data from user info
     const accounts = user ? [

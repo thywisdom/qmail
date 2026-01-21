@@ -51,6 +51,8 @@ export function Account({
 
     const handleLogout = async () => {
         try {
+            // Clear the session cookie used by middleware
+            document.cookie = "__session=; path=/; max-age=0; SameSite=Lax"
             await db.auth.signOut()
             router.push("/login")
         } catch (err) {

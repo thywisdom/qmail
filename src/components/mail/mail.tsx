@@ -77,7 +77,6 @@ export function MailComponent({
         // Basic selection logic: Select first mail if none selected, OR if the currently selected mail is NOT in the filtered list (e.g. moved to trash)
         const isSelectedInList = filteredMails.some(m => m.id === mail.selected)
         if ((!mail.selected || !isSelectedInList) && filteredMails.length > 0) {
-            // setMail({ ...mail, selected: filteredMails[0].id }) // Auto-select first? Maybe slightly annoying if it jumps. 
             // Better: Deselect if not found, let user select.
             if (!isSelectedInList && mail.selected) {
                 setMail(prev => ({ ...prev, selected: null }))
@@ -145,8 +144,6 @@ export function MailComponent({
                                     variant: mail.filter === "inbox" ? "default" : "ghost",
                                     onClick: () => setMail(prev => ({ ...prev, filter: "inbox" }))
                                 },
-                                // Drafts removed.
-                                // Sent functionality implemented via labels.
                                 {
                                     title: "Sent",
                                     label: "",

@@ -45,8 +45,14 @@ export function NavUser({
   const router = useRouter()
 
   const handleLogout = async () => {
-    await db.auth.signOut()
-    router.push("/login")
+    try {
+      // Clear the session cookie used by middleware
+      document.cookie = "__session=; path=/; max-age=0; SameSite=Lax"
+      await db.auth.signOut()
+      router.push("/login")
+    } catch (err) {
+      console.error("Failed to sign out", err)
+    }
   }
 
   return (
