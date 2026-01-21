@@ -8,9 +8,8 @@ import {
     Loader2
 } from "lucide-react"
 
-import md5 from "md5"
-
 import { db } from "@/lib/db"
+import { useSenderAvatars } from "@/hooks/use-sender-avatars"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -75,49 +74,7 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     }, [mail, mails])
 
-    // Get all unique sender emails from the thread
-    const senderEmails = React.useMemo(() => {
-        const emails = new Set<string>()
-        threadMails.forEach(m => {
-            const email = m.message?.senderEmail || m.email || ""
-            if (email) emails.add(email.toLowerCase())
-        })
-        return Array.from(emails)
-    }, [threadMails])
-
-    // Fetch user profiles for all senders
-    const { data: sendersData } = db.useQuery({
-        $users: {
-            $: {
-                where: {
-                    email: { in: senderEmails }
-                }
-            }
-        }
-    })
-
-    const senderAvatars = React.useMemo(() => {
-        const map = new Map<string, string>()
-
-        // Populate from DB results
-        sendersData?.$users?.forEach((u: any) => {
-            if (u.email && u.avatarUrl) {
-                map.set(u.email.toLowerCase(), u.avatarUrl)
-            }
-        })
-
-        // For missing, use Gravatar
-        senderEmails.forEach(email => {
-            if (!map.has(email)) {
-                // Generate Gravatar
-                const hash = md5(email.trim().toLowerCase())
-                const gravatarUrl = `https://www.gravatar.com/avatar/${hash}?d=mp` // mp = mystery person
-                map.set(email, gravatarUrl)
-            }
-        })
-
-        return map
-    }, [sendersData, senderEmails])
+    const { getAvatar } = useSenderAvatars(threadMails)
 
 
     // Quick "Reply" implementation: just sends a new mail (to self/inbox for demo)
@@ -246,7 +203,7 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                                         <div className="flex items-start gap-4 text-sm">
                                             <Avatar>
                                                 <AvatarImage
-                                                    src={senderAvatars.get((threadMail.message?.senderEmail || threadMail.email || "").toLowerCase())}
+                                                    src={getAvatar(threadMail.message?.senderEmail || threadMail.email)}
                                                     alt={senderName}
                                                 />
                                                 <AvatarFallback>
