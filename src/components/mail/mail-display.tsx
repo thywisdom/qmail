@@ -1,7 +1,6 @@
 import { format } from "date-fns"
 import {
     Archive,
-    ArchiveX,
     Calendar as CalendarIcon,
     MoreVertical,
     Trash2,
@@ -46,7 +45,6 @@ interface MailDisplayProps {
 }
 
 export function MailDisplay({ mail, mails }: MailDisplayProps) {
-    const today = new Date()
     const { moveToTrash, archiveMail, sendMail, markAsRead, deletePermanently } = useMailMutations()
     const { user } = db.useAuth()
 

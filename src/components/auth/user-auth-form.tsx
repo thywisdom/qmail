@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 
-interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> { }
+type UserAuthFormProps = React.HTMLAttributes<HTMLDivElement>
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const router = useRouter()
@@ -89,17 +89,19 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         }
 
         try {
-            const result = await db.auth.signInWithMagicCode({ email: sentEmail, code })
+            await db.auth.signInWithMagicCode({ email: sentEmail, code })
 
             // Set session cookie for middleware
             document.cookie = `__session=true; path=/; max-age=2592000; SameSite=Lax`
 
             // We don't redirect here immediately. 
             // We let the useEffect above handle it once the user profile query resolves.
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Verification failed:", error)
 
-            let message = error.body?.message || error.message || "Failed to verify code."
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const err = error as any;
+            let message = err.body?.message || err.message || "Failed to verify code."
 
             // Handle specific "Record not found" error from InstantDB which implies invalid/expired code
             if (message.includes("Record not found")) {

@@ -12,7 +12,8 @@ import { Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 
-interface ProfileSetupFormProps extends React.HTMLAttributes<HTMLDivElement> { }
+
+type ProfileSetupFormProps = React.HTMLAttributes<HTMLDivElement>
 
 export function ProfileSetupForm({ className, ...props }: ProfileSetupFormProps) {
     const router = useRouter()

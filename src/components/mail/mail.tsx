@@ -74,15 +74,31 @@ export function MailComponent({
 
 
     React.useEffect(() => {
-        // Basic selection logic: Select first mail if none selected, OR if the currently selected mail is NOT in the filtered list (e.g. moved to trash)
+        // Basic selection logic: Select first mail if none selected, OR if the currently selected mail is NOT in the filtered list
         const isSelectedInList = filteredMails.some(m => m.id === mail.selected)
         if ((!mail.selected || !isSelectedInList) && filteredMails.length > 0) {
-            // Better: Deselect if not found, let user select.
             if (!isSelectedInList && mail.selected) {
                 setMail(prev => ({ ...prev, selected: null }))
             }
         }
     }, [filteredMails, mail.selected, setMail])
+
+    // Responsive layout handling
+    React.useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) {
+                setIsCollapsed(true)
+            }
+        }
+
+        // Check on mount
+        handleResize()
+
+        // Add listener
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
 
     // Calculate counts
     const unreadCount = mails.filter(m => !m.read && m.status === "inbox").length
@@ -99,14 +115,13 @@ export function MailComponent({
                         sizes
                     )}`
                 }}
-                className="h-full max-h-[800px] items-stretch"
+                className="h-full items-stretch"
             >
                 <ResizablePanel
                     defaultSize={defaultLayout[0]}
                     collapsedSize={navCollapsedSize}
                     collapsible={true}
                     minSize={15}
-                    maxSize={20}
                     onCollapse={() => {
                         setIsCollapsed(true)
                         document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(

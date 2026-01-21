@@ -2,7 +2,7 @@
 
 import { ChartAreaInteractive } from "@/components/dashboard/chart-area-interactive"
 import { SectionCards } from "@/components/dashboard/section-cards"
-import { db } from "@/lib/db"
+
 
 export default function Page() {
     // Placeholder fetching for analytics - in real implementation this would query 'boxes'

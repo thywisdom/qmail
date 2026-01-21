@@ -2,13 +2,12 @@
 
 import { MailComponent } from "@/components/mail/mail"
 import { db } from "@/lib/db"
-import { useEffect, useState } from "react"
 import { type Mail } from "@/components/mail/use-mail"
 import { mapBoxToMail } from "@/lib/mail-utils"
 
 export default function MailPage() {
 
-    const { isLoading, user, error } = db.useAuth()
+    const { isLoading, user } = db.useAuth()
 
     // Fetch user's boxes and join the message content
     const { data } = db.useQuery({
@@ -45,7 +44,7 @@ export default function MailPage() {
     ] : []
 
     return (
-        <div className="hidden flex-col md:flex h-screen">
+        <div className="hidden flex-col md:flex h-screen overflow-hidden">
             <MailComponent
                 accounts={accounts}
                 mails={mails}

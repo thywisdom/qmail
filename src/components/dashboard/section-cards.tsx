@@ -26,10 +26,10 @@ export function SectionCards() {
 
   const boxes = data?.boxes || []
 
-  const inboxCount = boxes.filter((b: any) => b.status === 'inbox').length
-  const sentCount = boxes.filter((b: any) => b.status === 'sent').length
-  const trashCount = boxes.filter((b: any) => b.status === 'trash').length
-  const archiveCount = boxes.filter((b: any) => b.status === 'archive').length
+  const inboxCount = boxes.filter((b: { status: string }) => b.status === 'inbox').length
+  const sentCount = boxes.filter((b: { status: string }) => b.status === 'sent').length
+  const trashCount = boxes.filter((b: { status: string }) => b.status === 'trash').length
+  const archiveCount = boxes.filter((b: { status: string }) => b.status === 'archive').length
 
   return (
     <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

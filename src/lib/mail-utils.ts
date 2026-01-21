@@ -4,6 +4,7 @@ import { Mail } from "@/components/mail/use-mail";
  * Maps a database box entry (with nested message content) to the UI Mail object.
  * Handles potentially missing or malformed data gracefully.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapBoxToMail(box: any): Mail {
     // Robust extraction: Handle array or object for 'has: one' relation
     const contentRaw = box.content;

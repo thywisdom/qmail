@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-    const nonce = crypto.randomUUID();
     const session = request.cookies.get("__session")?.value;
     const url = request.nextUrl.clone();
 

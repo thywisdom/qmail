@@ -1,6 +1,6 @@
 
 import { db } from "@/lib/db"
-import { i, id } from "@instantdb/react"
+import { id } from "@instantdb/react"
 
 export function useMailMutations() {
     const transact = db.transact

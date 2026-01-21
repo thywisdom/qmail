@@ -2,12 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import {
   IconChartBar,
-  IconDashboard,
   IconDatabase,
   IconSettings,
-  IconInnerShadowTop,
   IconUserCircle,
   IconArrowLeft,
 } from "@tabler/icons-react"
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/sidebar"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { NavUser } from "@/components/dashboard/nav-user"
+import { db } from "@/lib/db"
 
 const data = {
   navMain: [
@@ -54,8 +54,6 @@ const data = {
   ],
 }
 
-import { db } from "@/lib/db"
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = db.useAuth()
   const { data: userData } = db.useQuery(user?.email ? { $users: { $: { where: { email: user.email } } } } : null)
@@ -77,7 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <Link href="/mail">
-                <img src="/images/logo.png" alt="QMail" className="size-6" />
+                <Image src="/images/logo.png" alt="QMail" width={24} height={24} className="size-6" />
                 <span className="text-base font-semibold">QMail</span>
               </Link>
             </SidebarMenuButton>
@@ -93,4 +91,3 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar >
   )
 }
-
