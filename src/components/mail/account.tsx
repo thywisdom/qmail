@@ -21,7 +21,8 @@ import {
     ChevronsUpDown,
     BadgeCheck,
 } from "lucide-react"
-import { IconDatabase } from "@tabler/icons-react"
+import { IconDatabase, IconSun, IconMoon } from "@tabler/icons-react"
+import { useTheme } from "next-themes"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -39,6 +40,7 @@ export function Account({
     accounts,
 }: AccountProps) {
     const router = useRouter()
+    const { theme, setTheme } = useTheme()
     const { user } = db.useAuth()
     const { data: userData } = db.useQuery(user?.email ? { $users: { $: { where: { email: user.email } } } } : null)
     const userProfile = userData?.$users?.[0]
@@ -127,6 +129,10 @@ export function Account({
                     <DropdownMenuItem onClick={() => router.push('/dashboard/data-control')}>
                         <IconDatabase className="mr-2 h-4 w-4" />
                         Data Control
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                        {theme === "dark" ? <IconSun className="mr-2 h-4 w-4" /> : <IconMoon className="mr-2 h-4 w-4" />}
+                        Theme
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

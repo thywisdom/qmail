@@ -6,7 +6,10 @@ import {
   IconLogout,
   IconHelp,
   IconUserCircle,
+  IconSun,
+  IconMoon,
 } from "@tabler/icons-react"
+import { useTheme } from "next-themes"
 
 import {
   Avatar,
@@ -43,6 +46,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
 
   const handleLogout = async () => {
     try {
@@ -102,6 +106,10 @@ export function NavUser({
               <DropdownMenuItem>
                 <IconUserCircle />
                 Account
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                {theme === "dark" ? <IconSun /> : <IconMoon />}
+                Theme
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push("/help")}>
                 <IconHelp />
