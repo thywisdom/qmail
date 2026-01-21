@@ -5,10 +5,7 @@ export function SiteHeader() {
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <h1 className="text-base font-medium">Settings</h1>
         <div className="ml-auto flex items-center gap-2">
-          {/* <Button size="sm" className="hidden h-7 sm:flex">
-            <IconCirclePlusFilled />
-            <span>Quick Create</span>
-          </Button> */}
+
         </div>
       </div>
     </header>
