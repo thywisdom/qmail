@@ -2,7 +2,7 @@
 
 import { Groq } from "groq-sdk"
 
-export async function generateReply(threadContext: string) {
+export async function generateReply(threadContext: string, userInstruction?: string) {
     const apiKey = process.env.GROQ_API_KEY3
 
     if (!apiKey) {
@@ -16,11 +16,17 @@ Your task is to draft a professional, concise, and relevant reply to the provide
 
 Guidelines:
 - Analyze the most recent message in the thread carefully.
-- adopt a professional and helpful tone.
+- Adopt a professional and helpful tone.
 - Be concise. Avoid fluff.
 - Do NOT include subject lines or placeholders like "[Your Name]" unless absolutely necessary.
 - If the thread context implies a specific relationship, adapt slightly (e.g. casual vs formal).
 - Output ONLY the body of the reply email.
+
+HANDLING USER INPUT:
+The user may provide an optional instruction or draft snippet in "USER INPUT".
+1. If "USER INPUT" contains instructions (e.g., "Tell them I'm busy", "Ask for a refund"), follow those instructions explicitly when drafting the reply.
+2. If "USER INPUT" contains content (e.g., "I will be there at 5pm"), incorporate that content naturally into the reply.
+3. If "USER INPUT" is empty, generate a generic, best-guess acknowledgment or reply based on the thread.
 
 Thread Context Provided Below:
 `
@@ -33,11 +39,15 @@ Thread Context Provided Below:
         ? "..." + threadContext.slice(-MAX_CONTEXT_LENGTH)
         : threadContext
 
+    const finalUserMessage = userInstruction
+        ? `${safeContext}\n\n---\nUSER INPUT:\n${userInstruction}`
+        : safeContext
+
     try {
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: safeContext }
+                { role: "user", content: finalUserMessage }
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 0.6,

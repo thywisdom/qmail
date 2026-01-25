@@ -163,7 +163,6 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
         if (!threadMails.length) return
 
         // 1. Check if the latest mail is encrypted and NOT decrypted
-        // We use the last mail in the thread as the reference context
         const latestMail = threadMails[threadMails.length - 1]
 
         if (latestMail.isEncrypted && !decryptedContents[latestMail.id]) {
@@ -171,8 +170,13 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
             return
         }
 
-        // 2. Warn user about privacy
-        setShowPrivacyWarning(true)
+        // 2. Conditional Warning: Only warn in Quantum Mode
+        if (isQuantum) {
+            setShowPrivacyWarning(true)
+        } else {
+            // Normal mode: Proceed directly
+            performAiGeneration()
+        }
     }
 
     const performAiGeneration = async () => {
@@ -196,7 +200,9 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                 return
             }
 
-            const result = await generateReply(context)
+            // Pass current input as instruction
+            const result = await generateReply(context, replyText)
+
             if (result.success && result.text) {
                 setReplyText(result.text)
             } else {
