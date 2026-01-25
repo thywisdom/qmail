@@ -3,9 +3,6 @@
 import { i } from "@instantdb/react";
 
 const _schema = i.schema({
-  // We inferred 1 attribute!
-  // Take a look at this schema, and if everything looks good,
-  // run `push schema` again to enforce the types.
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed(),
@@ -13,28 +10,76 @@ const _schema = i.schema({
     }),
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
-      imageURL: i.string().optional(),
-      type: i.string().optional(),
-      accountStatus: i.string().optional(), // Used to gate app access
-      preferredAIRule: i.string().optional(), // Existing placeholder in DB/UI
-      aiCustomPrompt: i.string().optional(), // New field for custom system role
+      avatarUrl: i.string().optional(),
+      accountStatus: i.string().optional(),
+      name: i.string().optional(),
+      bio: i.string().optional(),
+      preferredAIRule: i.string().optional(),
+      aiCustomPrompt: i.string().optional(),
+      status: i.string().optional(), // "dnd", "busy", "confidential", "open"
     }),
-    boxes: i.entity({
-      labels: i.json(),
-      read: i.boolean(),
-      status: i.string().indexed(),
-      userEmail: i.string().indexed(),
-    }),
-    mails: i.entity({
-      body: i.string(),
+    ringIdentities: i.entity({
+      publicKey: i.string(),
+      encryptedSecretKey: i.string(),
+      status: i.string().indexed(), // "active", "revoked"
       createdAt: i.string(),
-      recipientEmail: i.string(),
-      senderEmail: i.string(),
+      lastUsedAt: i.string().optional(),
+    }),
+    // Content of the mail (shared/immutable)
+    mails: i.entity({
       subject: i.string(),
-      threadId: i.string().indexed(),
+      body: i.string(),
+      senderEmail: i.string(),
+      recipientEmail: i.string(), // Main recipient for reference
+      createdAt: i.string(),
+      threadId: i.any().optional(), // Group messages by thread - relaxed to any to fix schema push
+      isEncrypted: i.boolean().optional(),
+    }),
+    // User-specific state (folder, read status)
+    boxes: i.entity({
+      userEmail: i.string().indexed(), // Owner
+      status: i.string().indexed(), // "inbox", "sent", "trash", "archive", "draft"
+      read: i.boolean(),
+      labels: i.json(), // Extra tags
     }),
   },
   links: {
+    $boxesMails: {
+      forward: {
+        on: "boxes",
+        has: "one",
+        label: "content",
+      },
+      reverse: {
+        on: "mails",
+        has: "many",
+        label: "boxes",
+      }
+    },
+    $usersRingIdentities: {
+      forward: {
+        on: "$users",
+        has: "many",
+        label: "ringIdentities",
+      },
+      reverse: {
+        on: "ringIdentities",
+        has: "one",
+        label: "user",
+      }
+    },
+    $mailsRingIdentity: {
+      forward: {
+        on: "mails",
+        has: "one",
+        label: "usedRingIdentity",
+      },
+      reverse: {
+        on: "ringIdentities",
+        has: "many",
+        label: "encryptedMails",
+      }
+    },
     $usersLinkedPrimaryUser: {
       forward: {
         on: "$users",
@@ -48,25 +93,12 @@ const _schema = i.schema({
         label: "linkedGuestUsers",
       },
     },
-    boxesContent: {
-      forward: {
-        on: "boxes",
-        has: "one",
-        label: "content",
-      },
-      reverse: {
-        on: "mails",
-        has: "many",
-        label: "boxes",
-      },
-    },
   },
-  rooms: {},
 });
 
 // This helps TypeScript display nicer intellisense
 type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema { }
+type AppSchema = _AppSchema
 const schema: AppSchema = _schema;
 
 export type { AppSchema };

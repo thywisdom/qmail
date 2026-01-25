@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description: 'A simple mail application built with InstantDB',
 };
 
+import { ActionToaster } from "@/components/toaster"
+import { QuantumAuthProvider } from "@/hooks/use-quantum-auth"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,7 +37,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <QuantumAuthProvider>
+            {children}
+            <ActionToaster />
+          </QuantumAuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -29,6 +29,8 @@ export function useSenderAvatars(mails: Mail[]) {
         const map = new Map<string, string>()
 
         // Populate from DB results
+        // Populate from DB results
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sendersData?.$users?.forEach((u: any) => {
             if (u.email && u.avatarUrl) {
                 map.set(u.email.toLowerCase(), u.avatarUrl)

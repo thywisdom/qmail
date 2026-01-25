@@ -168,6 +168,10 @@ The JSON contract remains the same as previously defined.
 #### 2. Encrypt Message (`POST /encrypt`)
 #### 3. Decrypt Message (`POST /decrypt`)
 
+Security Module API domain:
+https://ring-lwe.onrender.com
+
+
 See the [Ring-LWE Service Documentation] for payload details.
 
 ## 5. Security Checklist

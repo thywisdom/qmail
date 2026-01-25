@@ -22,7 +22,35 @@ interface NavProps {
     }[]
 }
 
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { useAtom } from "jotai"
+import { isQuantumModeAtom } from "@/hooks/use-quantum-mode"
+import { useQuantumAuth } from "@/hooks/use-quantum-auth"
+import { QuantumLoginDialog } from "./quantum-login-dialog"
+import React from "react"
+import { toast } from "sonner"
+
 export function Nav({ links, isCollapsed }: NavProps) {
+    const [isQuantum, setIsQuantum] = useAtom(isQuantumModeAtom)
+    const { isQuantumReady } = useQuantumAuth()
+    const [showLogin, setShowLogin] = React.useState(false)
+
+    const handleToggle = (checked: boolean) => {
+        if (checked) {
+            // Turning ON
+            if (isQuantumReady) {
+                setIsQuantum(true)
+                toast.success("Quantum Mode Active")
+            } else {
+                // Need login
+                setShowLogin(true)
+            }
+        } else {
+            // Turning OFF
+            setIsQuantum(false)
+        }
+    }
     return (
         <div
             data-collapsed={isCollapsed}
@@ -83,6 +111,35 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     )
                 )}
             </nav>
+
+
+            <div className="mt-auto p-4">
+                <QuantumLoginDialog
+                    open={showLogin}
+                    onOpenChange={setShowLogin}
+                    onSuccess={() => {
+                        setIsQuantum(true)
+                        toast.success("Quantum Mode Active")
+                    }}
+                />
+
+                <div className={cn(
+                    "flex items-center gap-2",
+                    isCollapsed ? "justify-center" : "justify-between"
+                )}>
+                    {!isCollapsed && (
+                        <Label htmlFor="quantum-mode" className="text-sm font-medium">
+                            QuantumSecure
+                        </Label>
+                    )}
+                    <Switch
+                        id="quantum-mode"
+                        checked={isQuantum}
+                        onCheckedChange={handleToggle}
+                        className={isCollapsed ? "scale-75" : ""}
+                    />
+                </div>
+            </div>
         </div>
     )
 }

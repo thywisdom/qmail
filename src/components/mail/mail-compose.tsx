@@ -16,6 +16,11 @@ import { PenSquare, Sparkles, Loader2 } from "lucide-react"
 import { useMailMutations } from "@/hooks/use-mail-mutations"
 import { cn } from "@/lib/utils"
 import { generateEmail } from "@/app/actions/generate-email"
+import { useAtom } from "jotai"
+import { isQuantumModeAtom } from "@/hooks/use-quantum-mode"
+import { encryptMessage } from "@/lib/ring-lwe"
+import { toast } from "sonner"
+
 
 interface MailComposeProps {
     className?: string
@@ -40,6 +45,38 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
     const { data: userData } = db.useQuery(user?.email ? { $users: { $: { where: { email: user.email } } } } : null)
     const userProfile = userData?.$users?.[0]
 
+    // Quantum Logic: Query recipient's identity
+    const [isQuantum] = useAtom(isQuantumModeAtom)
+
+    // We query the recipient to get their Public Key
+    // Note: We use 'to' state, but debouncing is handled by InstantDB implicitly to some extent or we rely on the user finishing typing.
+    const { data: recipientData } = db.useQuery(
+        to && isQuantum ? {
+            $users: {
+                $: { where: { email: to } },
+            },
+            ringIdentities: {
+                $: { where: { status: "active" } } // This gets ALL active identities, we need to filter by user relation manually if schema traversal isn't direct in root query.
+                // Wait, traversing: users -> ringIdentities is better.
+            }
+        } : null
+    )
+
+    // Correct Query for Relation Traversal:
+    const { data: qData } = db.useQuery(
+        to && isQuantum ? {
+            $users: {
+                $: { where: { email: to } },
+                ringIdentities: {
+                    $: { where: { status: "active" } }
+                }
+            }
+        } : null
+    )
+
+    const recipientUser = qData?.$users?.[0]
+    const recipientIdentity = recipientUser?.ringIdentities?.[0]
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setLoading(true)
@@ -50,14 +87,42 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
             return
         }
 
+        // Quantum Check
+        let finalMessage = message
+        let isEncrypted = false
+        let usedIdentityId = undefined
+
+        if (isQuantum) {
+            // Must have recipient identity
+            if (!recipientIdentity) {
+                toast.error("Recipient has no Quantum Identity. Cannot send secure mail.")
+                setLoading(false)
+                return
+            }
+
+            try {
+                // Encrypt
+                finalMessage = await encryptMessage(recipientIdentity.publicKey, message)
+                isEncrypted = true
+                usedIdentityId = recipientIdentity.id
+            } catch (err) {
+                console.error("Encryption Failed", err)
+                toast.error("Failed to encrypt message.")
+                setLoading(false)
+                return
+            }
+        }
+
         try {
             await sendMail({
-                name: "Me",
+                name: userProfile?.name || "Me",
                 email: to,
                 to: to,
                 subject: subject,
-                text: message,
-                userEmail: user.email
+                text: finalMessage,
+                userEmail: user.email,
+                isEncrypted,
+                usedIdentityId
             })
             setOpen(false)
             // Reset form

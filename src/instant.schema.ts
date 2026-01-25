@@ -18,6 +18,13 @@ const _schema = i.schema({
       aiCustomPrompt: i.string().optional(),
       status: i.string().optional(), // "dnd", "busy", "confidential", "open"
     }),
+    ringIdentities: i.entity({
+      publicKey: i.string(),
+      encryptedSecretKey: i.string(),
+      status: i.string().indexed(), // "active", "revoked"
+      createdAt: i.string(),
+      lastUsedAt: i.string().optional(),
+    }),
     // Content of the mail (shared/immutable)
     mails: i.entity({
       subject: i.string(),
@@ -26,6 +33,7 @@ const _schema = i.schema({
       recipientEmail: i.string(), // Main recipient for reference
       createdAt: i.string(),
       threadId: i.any().optional(), // Group messages by thread - relaxed to any to fix schema push
+      isEncrypted: i.boolean().optional(),
     }),
     // User-specific state (folder, read status)
     boxes: i.entity({
@@ -46,6 +54,30 @@ const _schema = i.schema({
         on: "mails",
         has: "many",
         label: "boxes",
+      }
+    },
+    $usersRingIdentities: {
+      forward: {
+        on: "$users",
+        has: "many",
+        label: "ringIdentities",
+      },
+      reverse: {
+        on: "ringIdentities",
+        has: "one",
+        label: "user",
+      }
+    },
+    $mailsRingIdentity: {
+      forward: {
+        on: "mails",
+        has: "one",
+        label: "usedRingIdentity",
+      },
+      reverse: {
+        on: "ringIdentities",
+        has: "many",
+        label: "encryptedMails",
       }
     },
     $usersLinkedPrimaryUser: {

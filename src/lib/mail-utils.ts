@@ -41,6 +41,7 @@ export function mapBoxToMail(box: any): Mail {
         email: box.status === "sent" ? (message?.recipientEmail || "") : (message?.senderEmail || ""),
 
         message: message, // Keep raw if needed
-        threadId: message?.threadId // Map threadId
+        threadId: message?.threadId, // Map threadId
+        isEncrypted: message?.isEncrypted
     };
 }

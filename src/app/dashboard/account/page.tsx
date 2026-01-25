@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 
 import { enhanceUserPrompt } from "@/app/actions/enhance-prompt"
 import { Sparkles, Loader2 } from "lucide-react"
+import { KeyManagement } from "@/components/settings/key-management"
 
 // ... imports remain the same, just appending/merging
 
@@ -206,6 +207,10 @@ Tasks:
                         </div>
                     </CardContent>
                 </Card>
+
+                <div className="md:col-span-2">
+                    <KeyManagement />
+                </div>
 
                 <Card className="shadow-sm">
                     <CardHeader>

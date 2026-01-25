@@ -25,6 +25,7 @@ export type Mail = {
     text: string
     date: string
     threadId: string
+    isEncrypted?: boolean
 }
 
 export type MailFilter = "inbox" | "trash" | "archive" | "sent" | "drafts"

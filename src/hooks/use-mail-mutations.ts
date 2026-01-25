@@ -50,7 +50,9 @@ export function useMailMutations() {
         name: string,
         to?: string,
         userEmail: string, // Sender
-        threadId?: string // Optional thread ID
+        threadId?: string, // Optional thread ID
+        isEncrypted?: boolean,
+        usedIdentityId?: string
     }) => {
         const mailContentId = id()
         const senderBoxId = id()
@@ -62,16 +64,24 @@ export function useMailMutations() {
         const recipientEmail = mail.to || mail.email
         const now = new Date().toISOString()
 
+        let mailUpdate = db.tx.mails[mailContentId].update({
+            subject: mail.subject,
+            body: mail.text,
+            senderEmail: mail.userEmail,
+            recipientEmail: recipientEmail,
+            createdAt: now,
+            threadId: threadId,
+            isEncrypted: !!mail.isEncrypted,
+        })
+
+        // Link Identity if used
+        if (mail.usedIdentityId) {
+            mailUpdate = mailUpdate.link({ usedRingIdentity: mail.usedIdentityId })
+        }
+
         transact([
             // 1. Create Shared Content
-            db.tx.mails[mailContentId].update({
-                subject: mail.subject,
-                body: mail.text,
-                senderEmail: mail.userEmail,
-                recipientEmail: recipientEmail,
-                createdAt: now,
-                threadId: threadId,
-            }),
+            mailUpdate,
 
             // 2. Sender Box (Sent Folder)
             db.tx.boxes[senderBoxId].update({

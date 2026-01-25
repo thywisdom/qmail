@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
+import { QuantumSetupForm } from "@/components/auth/quantum-setup-form"
 
 
 type ProfileSetupFormProps = React.HTMLAttributes<HTMLDivElement>
@@ -18,6 +19,17 @@ type ProfileSetupFormProps = React.HTMLAttributes<HTMLDivElement>
 export function ProfileSetupForm({ className, ...props }: ProfileSetupFormProps) {
     const router = useRouter()
     const { user, isLoading: isAuthLoading } = db.useAuth()
+
+    // Check if user has ring identity
+    const { data: ringData } = db.useQuery(
+        user?.id ? {
+            ringIdentities: {
+                $: {
+                    where: { "user.id": user.id }
+                }
+            }
+        } : null
+    )
 
     // We can query the user profile here to pre-fill or check status
     const { data, isLoading: isQueryLoading } = db.useQuery(
@@ -38,41 +50,47 @@ export function ProfileSetupForm({ className, ...props }: ProfileSetupFormProps)
     // Derived state
     const isPageLoading = isAuthLoading || isQueryLoading
     const userProfile = data?.$users?.[0]
+    const hasRingIdentity = ringData?.ringIdentities && ringData.ringIdentities.length > 0
 
-    // Effect to redirect if already verified? 
-    // Maybe best to handle "already set up" case here too for robustness
+    // Enhanced Redirect Logic
+    // Enhanced Redirect Logic
     React.useEffect(() => {
-        if (!isPageLoading && userProfile && userProfile.accountStatus === 'active') {
-            router.push("/mail")
-        }
-    }, [isPageLoading, userProfile, router])
+        if (isPageLoading) return
 
-    const totalSteps = 2
+        // 1. Fully Active: Account Active AND Ring Identity Exists -> Go to /mail
+        if (userProfile?.accountStatus === 'active' && hasRingIdentity) {
+            router.push("/mail")
+            return
+        }
+
+        // 2. Profile Details Done (Name exists) but No Identity -> Enforce Step 3
+        if (userProfile?.name && !hasRingIdentity) {
+            setStep(3)
+        }
+
+        // 3. Otherwise stay on Step 1 or 2 (Implicit)
+    }, [isPageLoading, userProfile, hasRingIdentity, router])
+
+    const totalSteps = 3
     const progress = (step / totalSteps) * 100
 
-    async function onComplete() {
+    async function onCompleteProfile() {
         if (!user?.email) return
         setIsLoading(true)
 
         try {
-            // Upsert user profile
-            // If the user entity already exists (created by layout check or previous partial attempt), update it.
-            // If not, create it. 
-            // Since we queried by email, userProfile.id might be available.
-
             const userId = userProfile?.id || crypto.randomUUID()
 
             await db.transact(
                 db.tx.$users[userId].update({
                     name: name,
                     avatarUrl: avatarUrl,
-                    accountStatus: "active"
+                    // accountStatus will be set to "active" ONLY after Quantum Setup
                 })
             )
 
-            // Artificial delay for UX
-            await new Promise(resolve => setTimeout(resolve, 500))
-            router.push("/mail")
+            // Move to Quantum Setup
+            setStep(3)
         } catch (error) {
             console.error("Failed to update profile:", error)
         } finally {
@@ -93,6 +111,26 @@ export function ProfileSetupForm({ className, ...props }: ProfileSetupFormProps)
 
     if (isPageLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+    }
+
+    // Step 3 is special (QuantumForm) - it renders its own card/unwrapped style usually, 
+    // but here we are inside a layout. The QuantumSetupForm is designed as a Card. 
+    // We should unwrap it or adapt it. 
+    // For simplicity, if step 3, we just render QuantumSetupForm which handles its own submission and redirect.
+    if (step === 3) {
+        return (
+            <div className={cn("flex flex-col items-center gap-4", className)} {...props}>
+                <div className="w-full mb-4">
+                    <div className="flex justify-between text-sm mb-2">
+                        <span>Security Setup</span>
+                        <span>Step 3 of 3</span>
+                    </div>
+                    <Progress value={100} className="h-2" />
+                </div>
+                {/* Render Quantum Form directly */}
+                <QuantumSetupForm />
+            </div>
+        )
     }
 
     return (
@@ -152,11 +190,11 @@ export function ProfileSetupForm({ className, ...props }: ProfileSetupFormProps)
                         <Button variant="outline" onClick={() => setStep(1)} disabled={isLoading}>
                             Back
                         </Button>
-                        <Button onClick={onComplete} disabled={isLoading || !name.trim()}>
+                        <Button onClick={onCompleteProfile} disabled={isLoading || !name.trim()}>
                             {isLoading && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
-                            Complete Setup
+                            Save & Continue
                         </Button>
                     </div>
                 </div>
