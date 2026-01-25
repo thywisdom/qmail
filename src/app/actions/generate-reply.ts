@@ -25,11 +25,19 @@ Guidelines:
 Thread Context Provided Below:
 `
 
+    // Truncate context to prevent 413 errors (max ~12k tokens)
+    // 1 token ~= 4 chars. 12000 tokens ~= 48000 chars. 
+    // We'll be conservative and use 20000 chars max.
+    const MAX_CONTEXT_LENGTH = 20000
+    const safeContext = threadContext.length > MAX_CONTEXT_LENGTH
+        ? "..." + threadContext.slice(-MAX_CONTEXT_LENGTH)
+        : threadContext
+
     try {
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: threadContext }
+                { role: "user", content: safeContext }
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 0.6,
@@ -39,6 +47,7 @@ Thread Context Provided Below:
         return { success: true, text: completion.choices[0]?.message?.content || "" }
     } catch (error) {
         console.error("Groq Reply Generation Error:", error)
-        return { success: false, error: "Failed to generate reply." }
+        // Extract error message safe for client
+        return { success: false, error: "Failed to generate reply (API Error)." }
     }
 }

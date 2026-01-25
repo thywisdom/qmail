@@ -1,4 +1,4 @@
-import { Mail } from "@/components/mail/use-mail";
+import { Mail } from "@/lib/types";
 
 /**
  * Maps a database box entry (with nested message content) to the UI Mail object.

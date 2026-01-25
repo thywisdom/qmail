@@ -1,7 +1,7 @@
 import React from "react"
 import md5 from "md5"
 import { db } from "@/lib/db"
-import { Mail } from "@/components/mail/use-mail"
+import { Mail } from "@/lib/types"
 
 export function useSenderAvatars(mails: Mail[]) {
     // Get all unique sender emails from the mails

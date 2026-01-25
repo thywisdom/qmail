@@ -35,8 +35,18 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-import { Mail } from "@/components/mail/use-mail"
+import { Mail } from "@/lib/types"
 import { useMailMutations } from "@/hooks/use-mail-mutations"
 import React from "react"
 import { generateReply } from "@/app/actions/generate-reply"
@@ -59,9 +69,14 @@ interface MailDisplayProps {
 export function MailDisplay({ mail, mails }: MailDisplayProps) {
     const { moveToTrash, archiveMail, sendMail, markAsRead, deletePermanently } = useMailMutations()
     const { user } = db.useAuth()
+    const [isQuantum] = useAtom(isQuantumModeAtom)
 
     const [replyText, setReplyText] = React.useState("")
     const [isGeneratingReply, setIsGeneratingReply] = React.useState(false)
+    const [showPrivacyWarning, setShowPrivacyWarning] = React.useState(false)
+
+    // Lifted State: Track decrypted content by Mail ID
+    const [decryptedContents, setDecryptedContents] = React.useState<Record<string, string>>({})
 
     const handleTrash = () => {
         if (!mail) return
@@ -86,12 +101,7 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
 
     const { getAvatar } = useSenderAvatars(threadMails)
 
-    // Quantum Logic for Replying
-    const [isQuantum] = useAtom(isQuantumModeAtom)
-
     // Determine who we are replying to. 
-    // mail.email is usually the SENDER of the mail we are viewing. 
-    // Or mail.replyTo if exists. for now use mail.email.
     const recipientEmail = mail?.email
 
     const { data: qData } = db.useQuery(
@@ -108,7 +118,6 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
     const recipientIdentity = recipientUser?.ringIdentities?.[0]
 
 
-    // Quick "Reply" implementation: just sends a new mail (to self/inbox for demo)
     const handleReply = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!mail || !user?.email) return
@@ -133,42 +142,69 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
             }
         }
 
-        // In a real app, this would send to the sender. 
         sendMail({
-            subject: mail.subject.startsWith("Re:") ? mail.subject : `Re: ${mail.subject}`, // Keep Re: prefix
+            subject: mail.subject.startsWith("Re:") ? mail.subject : `Re: ${mail.subject}`,
             text: finalMessage,
-            email: mail.email, // Reply to the sender (or the email associated with the mail)
+            email: mail.email,
             to: mail.email,
-            name: user.email, // Sender name can be user's email or name
-            userEmail: user.email, // Enforce ownership by current user
-            threadId: mail.threadId, // maintain thread
+            name: user.email,
+            userEmail: user.email,
+            threadId: mail.threadId,
             isEncrypted,
             usedIdentityId
         })
-        setReplyText("") // Clear input
+        setReplyText("")
         if (isEncrypted) toast.success("Secure Reply Sent")
         else toast.success("Reply Sent")
     }
 
-    const onGenerateReply = async (e: React.MouseEvent) => {
+    const onGenerateReplyClick = (e: React.MouseEvent) => {
         e.preventDefault()
         if (!threadMails.length) return
 
+        // 1. Check if the latest mail is encrypted and NOT decrypted
+        // We use the last mail in the thread as the reference context
+        const latestMail = threadMails[threadMails.length - 1]
+
+        if (latestMail.isEncrypted && !decryptedContents[latestMail.id]) {
+            toast.error("Please decrypt the latest message to generate a reply.")
+            return
+        }
+
+        // 2. Warn user about privacy
+        setShowPrivacyWarning(true)
+    }
+
+    const performAiGeneration = async () => {
+        setShowPrivacyWarning(false)
         setIsGeneratingReply(true)
         try {
-            // Construct context from thread
-            const context = threadMails.map(m =>
-                `From: ${m.name || m.email}\nSubject: ${m.subject}\nBody: ${m.text}\nDate: ${m.date}\n---\n`
-            ).join("\n")
+            // Construct context - ONLY include plain text or SUCCESSFULLY decrypted text
+            const context = threadMails.map(m => {
+                const body = m.isEncrypted
+                    ? (decryptedContents[m.id] || "[Encrypted Message Omitted]")
+                    : m.text
+
+                // Skip huge omitted blocks or useless ciphertext
+                if (body === "[Encrypted Message Omitted]") return ""
+
+                return `From: ${m.name || m.email}\nSubject: ${m.subject}\nBody: ${body}\nDate: ${m.date}\n---\n`
+            }).filter(Boolean).join("\n")
+
+            if (!context.trim()) {
+                toast.error("No readable content available for AI context.")
+                return
+            }
 
             const result = await generateReply(context)
             if (result.success && result.text) {
                 setReplyText(result.text)
             } else {
-                console.error("Failed to generate reply")
+                toast.error(result.error || "Failed to generate reply")
             }
         } catch (err) {
             console.error(err)
+            toast.error("An error occurred during generation")
         } finally {
             setIsGeneratingReply(false)
         }
@@ -177,6 +213,23 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
 
     return (
         <div className="flex h-full flex-col">
+            <AlertDialog open={showPrivacyWarning} onOpenChange={setShowPrivacyWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Privacy Warning</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You are about to send the <strong>decrypted content</strong> of this email thread to a third-party AI provider (Groq) to generate a reply.
+                            <br /><br />
+                            This content will leave the secure Quantum environment. Do you wish to proceed?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={performAiGeneration}>Proceed</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <div className="flex h-[52px] items-center p-2">
                 <div className="flex items-center gap-2">
                     <Tooltip>
@@ -188,7 +241,6 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                         </TooltipTrigger>
                         <TooltipContent>Archive</TooltipContent>
                     </Tooltip>
-                    {/* Junk Removed */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" disabled={!mail} onClick={handleTrash}>
@@ -219,7 +271,6 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                         </Popover>
                         <TooltipContent>Calendar</TooltipContent>
                     </Tooltip>
-                    {/* Removed Reply/Forward buttons */}
                 </div>
                 <Separator orientation="vertical" className="mx-2 h-6" />
                 <DropdownMenu>
@@ -248,7 +299,6 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                 <div className="flex flex-1 flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto">
                         {threadMails.map((threadMail, index) => {
-                            // Correctly identify sender for display in thread
                             const isMe = threadMail.message?.senderEmail === user?.email
                             const senderName = isMe ? "Me" : (threadMail.name || threadMail.message?.senderEmail || "Unknown")
 
@@ -282,7 +332,11 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                                             </div>
                                         )}
                                     </div>
-                                    <MailContent mail={threadMail} />
+                                    <MailContent
+                                        mail={threadMail}
+                                        onDecrypt={(text) => setDecryptedContents(prev => ({ ...prev, [threadMail.id]: text }))}
+                                        decryptedTextOverride={decryptedContents[threadMail.id]}
+                                    />
                                     {index < threadMails.length - 1 && <Separator />}
                                 </div>
                             )
@@ -304,7 +358,7 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
                                         variant="ghost"
                                         size="sm"
                                         className="gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                        onClick={onGenerateReply}
+                                        onClick={onGenerateReplyClick}
                                         disabled={isGeneratingReply}
                                     >
                                         {isGeneratingReply ? (
@@ -336,23 +390,18 @@ export function MailDisplay({ mail, mails }: MailDisplayProps) {
     )
 }
 
-function MailContent({ mail }: { mail: Mail }) {
+function MailContent({ mail, onDecrypt, decryptedTextOverride }: { mail: Mail, onDecrypt: (text: string) => void, decryptedTextOverride?: string }) {
     const { isQuantumReady, derivedKey } = useQuantumAuth()
     const { user } = db.useAuth()
-    const [decryptedText, setDecryptedText] = React.useState<string | null>(null)
     const [isDecrypting, setIsDecrypting] = React.useState(false)
     const [error, setError] = React.useState("")
 
     const { data: identityData } = db.useQuery(
         mail.isEncrypted && user?.id ? {
             ringIdentities: {
-                $: { where: { "user.id": user.id, status: "active" } } // Simply fetch active key for now. 
-                // ideally we fetch the SPECIFIC key used for this mail via link, but for MVP let's fetch active or check links.
-                // The schema has $mailsRingIdentity. Let's try to query it.
+                $: { where: { "user.id": user.id, status: "active" } }
             },
             mails: {
-                // IMPORTANT: mail.id is the BOX id. We need the Content ID.
-                // mapBoxToMail stores the raw content in mail.message
                 $: { where: { id: mail.message?.id || "" } },
                 usedRingIdentity: {}
             }
@@ -360,7 +409,6 @@ function MailContent({ mail }: { mail: Mail }) {
     )
 
 
-    // Manual Decrypt Handler
     const handleDecrypt = async () => {
         if (!mail.isEncrypted) return
         if (!isQuantumReady || !derivedKey) {
@@ -371,35 +419,30 @@ function MailContent({ mail }: { mail: Mail }) {
         setIsDecrypting(true)
         setError("")
         try {
-            // 1. Get the Identity used for this mail
-            // Check if I am the recipient
             if (mail.message?.recipientEmail !== user?.email) {
-                setDecryptedText("Encrypted message (Only recipient can view)")
-                return
+                // If I am the sender, I actually CANNOT decrypt it unless I stored a copy. 
+                // Ring-LWE is public-key encryption. Sender encrypts with Recipient's Public Key.
+                // Sender does not have the Recipient's Secret Key. 
+                // Unless the system encrypted a copy for the sender, the sender cannot read their own sent encrypted mail.
+                // Use-Case Check: Currently, 'sendMail' creates ONE content record. 
+                // If I sent it, I encrypted it for the RECIPIENT. I essentially locked it and threw away the key (unless I am the recipient too).
+                // WARNING: This is a property of the current system design. 
+                // For now, let's inform the user.
+                throw new Error("Only the recipient can decrypt this message.")
             }
 
-            // Attempt 1: Specific Link
             let usedIdentity = identityData?.mails?.[0]?.usedRingIdentity
-
-            // Attempt 2: Fallback to active identity
             if (!usedIdentity) {
-                console.warn("Encryption Key Reference missing. Attempting fallback to active identity.")
                 const activeIdentity = identityData?.ringIdentities?.[0]
-                if (activeIdentity) {
-                    usedIdentity = activeIdentity
-                }
+                if (activeIdentity) usedIdentity = activeIdentity
             }
 
-            if (!usedIdentity) {
-                throw new Error("Encryption Key Reference missing and no active identity found.")
-            }
+            if (!usedIdentity) throw new Error("Encryption Key Reference missing.")
 
-            // 2. Decrypt SK
             const rawSK = await decryptSecretKey(usedIdentity.encryptedSecretKey, derivedKey)
-
-            // 3. Decrypt Content
             const plaintext = await decryptMessage(rawSK, mail.text)
-            setDecryptedText(plaintext)
+
+            onDecrypt(plaintext)
 
         } catch (err) {
             console.error(err)
@@ -432,7 +475,7 @@ function MailContent({ mail }: { mail: Mail }) {
                         <p>Message is locked.</p>
                         <p className="text-xs">Enter your Quantum Master Key to verify and decrypt.</p>
                     </div>
-                ) : !decryptedText && !isDecrypting ? (
+                ) : !decryptedTextOverride && !isDecrypting ? (
                     <div className="flex flex-col items-center gap-4 py-8">
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Lock className="h-10 w-10 opacity-20" />
@@ -458,7 +501,7 @@ function MailContent({ mail }: { mail: Mail }) {
                     </div>
                 ) : (
                     <div className="whitespace-pre-wrap font-mono text-foreground">
-                        {decryptedText}
+                        {decryptedTextOverride}
                     </div>
                 )}
             </div>
