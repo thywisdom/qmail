@@ -359,60 +359,56 @@ function MailContent({ mail }: { mail: Mail }) {
         } : null
     )
 
-    React.useEffect(() => {
+
+    // Manual Decrypt Handler
+    const handleDecrypt = async () => {
         if (!mail.isEncrypted) return
-        if (!isQuantumReady || !derivedKey) return
-        if (decryptedText) return // Already decrypted
-
-        const decrypt = async () => {
-            setIsDecrypting(true)
-            setError("")
-            try {
-                // 1. Get the Identity used for this mail
-                // If mail is sent to ME, I need MY key.
-                // If I sent the mail, I need... wait, if I sent it, I encrypted it with RECIPIENT'S key.
-                // Sender cannot decrypt their own Ring-LWE messages usually unless they stored a copy or the sender's ephemeral key (which Ring-LWE doesn't usually persist in this simple model).
-                // "The email does not say 'Decrypt with Bob's Key'. It says 'Decrypt with Key ID #542'."
-                // Key #542 is the RECIPIENT'S key. 
-                // If I am the recipient, I have the Private Key for #542.
-                // If I am the sender, I DO NOT have the Private Key for #542.
-                // LIMITATION: Only RECIPIENT can decrypt. Sender sees ciphertext or "Encrypted for Recipient".
-
-                // Check if I am the recipient
-                if (mail.message?.recipientEmail !== user?.email) {
-                    // I am the sender (or observer).
-                    setDecryptedText("Encrypted message (Only recipient can view)")
-                    return
-                }
-
-                // I am recipient. Fetch the key link.
-                const usedIdentity = identityData?.mails?.[0]?.usedRingIdentity
-
-                if (!usedIdentity) {
-                    // Fallback to searching active identity if link missing (legacy/dev)
-                    // But in strict mode, we need the link.
-                    throw new Error("Encryption Key Reference missing.")
-                }
-
-                // 2. Decrypt SK
-                const rawSK = await decryptSecretKey(usedIdentity.encryptedSecretKey, derivedKey)
-
-                // 3. Decrypt Content
-                // mail.text holds the ciphertext? Or mail.body? 
-                // mapBoxToMail maps body -> text.
-                const plaintext = await decryptMessage(rawSK, mail.text)
-                setDecryptedText(plaintext)
-
-            } catch (err) {
-                console.error(err)
-                setError("Decryption failed. Invalid Key or Session.")
-            } finally {
-                setIsDecrypting(false)
-            }
+        if (!isQuantumReady || !derivedKey) {
+            toast.error("Please unlock Quantum Mode first.")
+            return
         }
 
-        decrypt()
-    }, [mail, isQuantumReady, derivedKey, identityData, user, decryptedText])
+        setIsDecrypting(true)
+        setError("")
+        try {
+            // 1. Get the Identity used for this mail
+            // Check if I am the recipient
+            if (mail.message?.recipientEmail !== user?.email) {
+                setDecryptedText("Encrypted message (Only recipient can view)")
+                return
+            }
+
+            // Attempt 1: Specific Link
+            let usedIdentity = identityData?.mails?.[0]?.usedRingIdentity
+
+            // Attempt 2: Fallback to active identity
+            if (!usedIdentity) {
+                console.warn("Encryption Key Reference missing. Attempting fallback to active identity.")
+                const activeIdentity = identityData?.ringIdentities?.[0]
+                if (activeIdentity) {
+                    usedIdentity = activeIdentity
+                }
+            }
+
+            if (!usedIdentity) {
+                throw new Error("Encryption Key Reference missing and no active identity found.")
+            }
+
+            // 2. Decrypt SK
+            const rawSK = await decryptSecretKey(usedIdentity.encryptedSecretKey, derivedKey)
+
+            // 3. Decrypt Content
+            const plaintext = await decryptMessage(rawSK, mail.text)
+            setDecryptedText(plaintext)
+
+        } catch (err) {
+            console.error(err)
+            setError(err instanceof Error ? err.message : "Decryption failed.")
+        } finally {
+            setIsDecrypting(false)
+        }
+    }
+
 
     if (!mail.isEncrypted) {
         return (
@@ -435,7 +431,21 @@ function MailContent({ mail }: { mail: Mail }) {
                         <Lock className="h-8 w-8 opacity-50" />
                         <p>Message is locked.</p>
                         <p className="text-xs">Enter your Quantum Master Key to verify and decrypt.</p>
-                        {/* The Toggle in Nav handles logic, user needs to click that. Or provided button here */}
+                    </div>
+                ) : !decryptedText && !isDecrypting ? (
+                    <div className="flex flex-col items-center gap-4 py-8">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Lock className="h-10 w-10 opacity-20" />
+                            <p className="text-sm">This content is encrypted with Ring-LWE.</p>
+                        </div>
+                        <Button
+                            onClick={handleDecrypt}
+                            variant="outline"
+                            className="gap-2 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                        >
+                            <ShieldCheck className="h-4 w-4" />
+                            Decrypt Mail
+                        </Button>
                     </div>
                 ) : isDecrypting ? (
                     <div className="flex items-center justify-center py-4 gap-2 text-indigo-500">

@@ -11,6 +11,7 @@ export type Mail = {
 
     // Mail Content fields (flattened)
     message?: {
+        id: string
         subject: string
         body: string
         senderEmail: string
