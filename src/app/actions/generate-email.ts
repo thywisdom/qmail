@@ -9,11 +9,11 @@ const groq = new Groq()
 
 export async function generateEmailDraft(subject: string, content: string, userEmail: string) {
     if (!process.env.GROQ_API_KEY) {
-        throw new Error("GROQ_API_KEY is not defined")
+        return { success: false, error: "System Configuration Error: API Key missing." }
     }
 
     if (!userEmail) {
-        throw new Error("User email is required")
+        return { success: false, error: "Validation Error: User email is required." }
     }
 
     // 1. Fetch user's custom prompt
@@ -80,8 +80,9 @@ Draft:`;
 
         return { success: true, text: completion.choices[0]?.message?.content || "" }
     } catch (error) {
-        console.error("Groq API Error:", error)
-        return { success: false, error: "Failed to generate email." }
+        // Technical error caught here - strictly return as failure object
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return { success: false, error: `AI Generation Failed: ${errorMessage}` }
     }
 }
 

@@ -6,7 +6,7 @@ export async function generateReply(threadContext: string, userInstruction?: str
     const apiKey = process.env.GROQ_API_KEY3
 
     if (!apiKey) {
-        throw new Error("GROQ_API_KEY3 is not defined.")
+        return { success: false, error: "System Configuration Error: GROQ_API_KEY3 missing." }
     }
 
     const groq = new Groq({ apiKey })
@@ -56,8 +56,8 @@ Thread Context Provided Below:
 
         return { success: true, text: completion.choices[0]?.message?.content || "" }
     } catch (error) {
-        console.error("Groq Reply Generation Error:", error)
-        // Extract error message safe for client
-        return { success: false, error: "Failed to generate reply (API Error)." }
+        // Technical error caught
+        const errorMessage = error instanceof Error ? error.message : "Unknown API Error";
+        return { success: false, error: `Reply Generation Failed: ${errorMessage}` }
     }
 }

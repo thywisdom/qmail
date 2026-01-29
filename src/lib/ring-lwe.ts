@@ -29,7 +29,12 @@ export async function generateKeyPair(): Promise<KeyPair> {
     });
 
     if (!res.ok) {
-        throw new Error(`Ring-LWE KeyGen Failed: ${res.statusText}`);
+        let errMsg = res.statusText;
+        try {
+            const errBody = await res.json();
+            if (errBody && errBody.error) errMsg = errBody.error;
+        } catch { /* ignore parse error */ }
+        throw new Error(`Ring-LWE KeyGen Failed: ${errMsg}`);
     }
     return res.json();
 }
@@ -48,7 +53,12 @@ export async function encryptMessage(publicKey: string, message: string): Promis
     });
 
     if (!res.ok) {
-        throw new Error(`Ring-LWE Encrypt Failed: ${res.statusText}`);
+        let errMsg = res.statusText;
+        try {
+            const errBody = await res.json();
+            if (errBody && errBody.error) errMsg = errBody.error;
+        } catch { /* ignore parse error */ }
+        throw new Error(`Ring-LWE Encrypt Failed: ${errMsg}`);
     }
 
     const data: EncryptResponse = await res.json();
@@ -69,7 +79,12 @@ export async function decryptMessage(secretKey: string, ciphertext: string): Pro
     });
 
     if (!res.ok) {
-        throw new Error(`Ring-LWE Decrypt Failed: ${res.statusText}`);
+        let errMsg = res.statusText;
+        try {
+            const errBody = await res.json();
+            if (errBody && errBody.error) errMsg = errBody.error;
+        } catch { /* ignore parse error */ }
+        throw new Error(`Ring-LWE Decrypt Failed: ${errMsg}`);
     }
 
     const data: DecryptResponse = await res.json();

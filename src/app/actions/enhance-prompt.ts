@@ -7,7 +7,7 @@ export async function enhanceUserPrompt(currentPrompt: string) {
     const apiKey = process.env.GROQ_API_KEY2
 
     if (!apiKey) {
-        throw new Error("GROQ_API_KEY2 is not defined. Please set it in your .env file.")
+        return { success: false, error: "System Configuration Error: GROQ_API_KEY2 missing." }
     }
 
     const groq = new Groq({ apiKey })
@@ -41,7 +41,7 @@ Ideal Output: "Persona: Professor Suman (Caltech, PhD Theoretical Physics & Quan
 
         return { success: true, text: completion.choices[0]?.message?.content || "" }
     } catch (error) {
-        console.error("Groq Prompt Enhancement Error:", error)
-        return { success: false, error: "Failed to enhance prompt." }
+        const errorMessage = error instanceof Error ? error.message : "Unknown Error";
+        return { success: false, error: `Prompt Enhancement Failed: ${errorMessage}` }
     }
 }

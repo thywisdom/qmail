@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
-// import { toast } from "sonner" // Assuming sonner is installed, otherwise verify
+import { toast } from "sonner"
 
 import { enhanceUserPrompt } from "@/app/actions/enhance-prompt"
 import { Sparkles, Loader2 } from "lucide-react"
@@ -90,9 +90,11 @@ export default function AccountPage() {
             const result = await enhanceUserPrompt(aiRule)
             if (result.success && result.text) {
                 setAiRule(result.text)
+            } else {
+                toast.error(result.error || "Failed to enhance prompt.")
             }
-        } catch (e) {
-            console.error(e)
+        } catch {
+            toast.error("Failed to enhance prompt (System Error).")
         } finally {
             setIsEnhancing(false)
         }

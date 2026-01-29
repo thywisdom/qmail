@@ -50,17 +50,7 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
 
     // We query the recipient to get their Public Key
     // Note: We use 'to' state, but debouncing is handled by InstantDB implicitly to some extent or we rely on the user finishing typing.
-    const { data: recipientData } = db.useQuery(
-        to && isQuantum ? {
-            $users: {
-                $: { where: { email: to } },
-            },
-            ringIdentities: {
-                $: { where: { status: "active" } } // This gets ALL active identities, we need to filter by user relation manually if schema traversal isn't direct in root query.
-                // Wait, traversing: users -> ringIdentities is better.
-            }
-        } : null
-    )
+
 
     // Correct Query for Relation Traversal:
     const { data: qData } = db.useQuery(
@@ -83,7 +73,9 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
 
         if (!to || !subject || !user?.email) {
             setLoading(false)
-            console.error("Missing fields or user not logged in")
+            // field validation handled by HTML required attribute mostly, but double check here
+            setLoading(false)
+            toast.error("Please fill in all fields.")
             return
         }
 
@@ -105,8 +97,8 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
                 finalMessage = await encryptMessage(recipientIdentity.publicKey, message)
                 isEncrypted = true
                 usedIdentityId = recipientIdentity.id
-            } catch (err) {
-                console.error("Encryption Failed", err)
+            } catch {
+
                 toast.error("Failed to encrypt message.")
                 setLoading(false)
                 return
@@ -129,8 +121,8 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
             setTo("")
             setSubject("")
             setMessage("")
-        } catch (error) {
-            console.error("Failed to send", error)
+        } catch {
+            toast.error("Failed to send email. Please try again.")
         } finally {
             setLoading(false)
         }
@@ -140,7 +132,7 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
         e.preventDefault()
         if (!subject && !message) {
             // Ideally show a toast here
-            console.log("Subject or content required for AI generation")
+            toast.error("Please add a subject or message content first.")
             return
         }
 
@@ -152,10 +144,10 @@ export function MailCompose({ className, isCollapsed }: MailComposeProps) {
             if (result.success && result.text) {
                 setMessage(result.text)
             } else {
-                console.error("AI Error:", result.error)
+                toast.error(result.error || "Failed to generate AI content.")
             }
-        } catch (e) {
-            console.error("AI Exception:", e)
+        } catch {
+            toast.error("Failed to generate AI content.")
         } finally {
             setAiLoading(false)
         }
